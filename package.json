@@ -1,0 +1,16 @@
+{
+  "name": "sandbox-applications",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SandBox student application site with admin dashboard",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server.js"
+  },
+  "dependencies": {
+    "express": "5.1.0"
+  }
+}
