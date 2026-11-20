@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
-ENV NODE_ENV=production DB_PATH=/data/sandbox.db
+ENV NODE_ENV=production DB_PATH=/data/pglite
 VOLUME ["/data"]
 EXPOSE 3000
 CMD ["npm", "start"]
