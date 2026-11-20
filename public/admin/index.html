@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>SandBox Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+<style>
+/* Admin layout: top bar, status strip that doubles as filter tabs, toolbar, table; detail opens in a side drawer. */
+:root{--pending:#f4cf82;--shortlisted:#8ab4ff;--accepted:#5ee3bc;--rejected:#ff8a7a}
+body{min-height:100vh}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--ink) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:.8rem;max-width:1400px}
+.topbar .who{display:flex;align-items:center;gap:.8rem;font-size:.85rem;color:var(--muted);flex-wrap:wrap;justify-content:flex-end}
+.pill-tag{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);border:1px solid color-mix(in srgb,var(--mint) 40%,transparent);padding:.2rem .5rem;border-radius:6px}
+.btn-sm{padding:.55rem .9rem;font-size:.85rem}
+main.admin .wrap{max-width:1400px}
+main.admin{padding-block:2rem 4rem}
+
+/* login */
+.login{min-height:calc(100vh - 80px);display:grid;place-items:center;padding-block:3rem}
+.login-card{width:100%;max-width:420px;border:1px solid var(--line);border-radius:18px;background:var(--ink-2);padding:2rem;display:flex;flex-direction:column;gap:1.2rem}
+.login-card h1{font-size:2rem}
+.login-card form{gap:1rem}
+.form-err{color:var(--danger);font-size:.9rem;min-height:1.2em}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.75rem;margin-bottom:1.5rem}
+@media (max-width:860px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.3rem;background:var(--ink)}
+.stat:hover{border-color:var(--muted)}
+.stat:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.stat[aria-pressed="true"]{border-color:var(--sand);background:var(--ink-2)}
+.stat .n{font-family:var(--f-display);font-weight:800;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat .k{display:flex;align-items:center;gap:.45rem;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.dot.pending{background:var(--pending)}.dot.shortlisted{background:var(--shortlisted)}.dot.accepted{background:var(--accepted)}.dot.rejected{background:var(--rejected)}
+
+/* toolbar */
+.toolbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.toolbar .search{flex:1 1 260px;min-width:0;position:relative}
+.toolbar .search input{padding-left:2.2rem}
+.toolbar .search::before{content:"⌕";position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.1rem}
+.toolbar select{width:auto;flex:0 0 auto}
+.rolebar{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.2rem}
+.rolebar button{all:unset;cursor:pointer;font-family:var(--f-mono);font-size:.75rem;padding:.35rem .65rem;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.rolebar button:hover{color:var(--cream)}
+.rolebar button[aria-pressed="true"]{border-color:var(--mint);color:var(--mint)}
+.rolebar button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.rolebar b{font-weight:500;color:var(--cream);margin-left:.3rem}
+
+/* table */
+.table-wrap{border:1px solid var(--line);border-radius:14px;overflow-x:auto;background:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:860px}
+th{text-align:left;font-family:var(--f-mono);font-weight:500;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.85rem 1rem;border-bottom:1px solid var(--line);background:var(--ink-2);white-space:nowrap}
+td{padding:.85rem 1rem;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr:hover{background:var(--ink-2)}
+tbody tr:focus-visible{outline:2px solid var(--mint);outline-offset:-2px}
+tbody tr:last-child td{border-bottom:0}
+td .name{font-weight:600}
+td .sub{color:var(--muted);font-size:.82rem}
+td.ref{font-family:var(--f-mono);font-size:.8rem;color:var(--sand);white-space:nowrap}
+td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rtag{display:inline-block;font-family:var(--f-mono);font-size:.7rem;background:var(--ink-3);padding:.15rem .45rem;border-radius:5px;margin:0 .25rem .25rem 0;white-space:nowrap}
+.status{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;padding:.25rem .6rem;border-radius:999px;border:1px solid var(--line);white-space:nowrap;text-transform:capitalize}
+.empty-state{padding:3.5rem 1.5rem;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:.6rem;align-items:center}
+.empty-state strong{font-family:var(--f-display);font-size:1.3rem;color:var(--cream)}
+.count-line{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);margin:.8rem 0 0}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(5,7,10,.6);z-index:70}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--ink-2);border-left:1px solid var(--line);z-index:80;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:1.4rem 1.5rem;border-bottom:1px solid var(--line)}
+.drawer h2{font-size:1.7rem}
+.drawer .x{all:unset;cursor:pointer;font-size:1.5rem;line-height:1;color:var(--muted);padding:.2rem .4rem;border-radius:6px}
+.drawer .x:hover{color:var(--cream)}
+.drawer .x:focus-visible{outline:2px solid var(--mint)}
+.drawer .content{overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.6rem}
+.status-pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem}
+@media (max-width:440px){.status-pick{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.status-pick button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;font-size:.82rem;padding:.6rem .3rem;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;gap:.35rem;text-transform:capitalize}
+.status-pick button:hover{border-color:var(--muted)}
+.status-pick button[aria-pressed="true"]{border-color:var(--sand);background:var(--ink-3)}
+.status-pick button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.motivation{white-space:pre-wrap;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:1rem;font-size:.95rem;line-height:1.6;color:#d6d9df;overflow-wrap:anywhere}
+.danger-zone{border-top:1px dashed var(--line);padding-top:1.2rem;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.btn-danger{border-color:color-mix(in srgb,var(--danger) 50%,transparent);color:var(--danger);background:transparent}
+.btn-danger:hover{background:color-mix(in srgb,var(--danger) 12%,transparent)}
+.saved{font-family:var(--f-mono);font-size:.75rem;color:var(--mint)}
+
+/* modal */
+.modal{position:fixed;inset:0;display:grid;place-items:center;z-index:90;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.modal .card{width:100%;max-width:420px;background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:1.6rem;display:flex;flex-direction:column;gap:1rem}
+.modal h3{font-size:1.4rem}
+
+.toast{position:fixed;left:50%;bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--cream);color:var(--ink);font-weight:600;font-size:.9rem;padding:.7rem 1.1rem;border-radius:999px;z-index:100;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="cube" viewBox="0 0 120 140"><polygon points="60,88 110,60 60,32 10,60" fill="#1f2733"/><polygon points="10,60 60,88 60,138 10,110" fill="#f4cf82"/><polygon points="110,60 60,88 60,138 110,110" fill="#e3a94a"/><polygon points="60,36 78,26 60,16 42,26" fill="#a8f0d8"/><polygon points="42,26 60,36 60,52 42,42" fill="#5ee3bc"/><polygon points="78,26 60,36 60,52 78,42" fill="#2fbf93"/><path d="M69 98 l10 3 -7 13" stroke="#10141b" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M84 104 l12 -7" stroke="#10141b" stroke-width="5.5" stroke-linecap="round"/></symbol></defs></svg>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/admin"><svg aria-hidden="true"><use href="#cube"/></svg><span class="wordmark">Sand<b>Box</b></span><span class="pill-tag">Admin</span></a>
+    <div class="who" id="who" hidden>
+      <span id="whoEmail"></span>
+      <button class="btn btn-ghost btn-sm" type="button" id="pwBtn">Change password</button>
+      <button class="btn btn-ghost btn-sm" type="button" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- login -->
+<section class="login wrap" id="loginView" hidden>
+  <div class="login-card">
+    <span class="label">Admin sign in</span>
+    <h1>View applicants</h1>
+    <form id="loginForm" novalidate>
+      <div class="field"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+      <div class="form-err" id="loginErr" role="alert"></div>
+      <button class="btn btn-primary" type="submit" style="justify-content:center">Sign in</button>
+    </form>
+    <a href="/" class="mono" style="font-size:.8rem;color:var(--muted)">← back to the public site</a>
+  </div>
+</section>
+
+<!-- dashboard -->
+<main class="admin" id="appView" hidden>
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+      <div><span class="label">Applications</span><h1 style="font-size:clamp(2rem,4vw,2.8rem);margin-top:.5rem">Applicants</h1></div>
+      <button class="btn btn-ghost btn-sm" type="button" id="csvBtn">Export CSV</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="toolbar">
+      <div class="search"><input type="text" id="q" placeholder="Search name, email, school, skill or reference" aria-label="Search applicants"></div>
+      <select id="sort" aria-label="Sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
+    </div>
+    <div class="rolebar" id="rolebar" role="group" aria-label="Filter by role"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Applicant</th><th>School</th><th>Roles</th><th>Level</th><th>Status</th><th>Reference</th><th>Applied</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty-state" id="empty" hidden></div>
+    </div>
+    <p class="count-line" id="countLine"></p>
+  </div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dName"></aside>
+
+<div class="modal" id="modal" hidden></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+const ROLES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
+const SHORT={pm:"PM",uiux:"UI/UX",fe:"FE",be:"BE",qa:"QA",devops:"OPS"};
+const STATUSES=["pending","shortlisted","accepted","rejected"];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const state={status:"",role:"",q:"",sort:"newest",apps:[],stats:{},roleCounts:{}};
+let lastFocus=null;
+
+async function api(path,opts={}){
+  const res=await fetch(path,{credentials:"same-origin",headers:{"Content-Type":"application/json"},...opts});
+  const body=await res.json().catch(()=>({}));
+  if(res.status===401&&path!=="/api/admin/login"){showLogin();throw new Error(body.error||"Sign in again.");}
+  if(!res.ok)throw new Error(body.error||"Something went wrong.");
+  return body;
+}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2400);}
+const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});};
+const fmtDateTime=iso=>new Date(iso).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
+
+// ---------- auth ----------
+function showLogin(){$("#appView").hidden=true;$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
+function showApp(email){$("#loginView").hidden=true;$("#appView").hidden=false;$("#who").hidden=false;$("#whoEmail").textContent=email;load();}
+$("#loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();$("#loginErr").textContent="";
+  const email=$("#lEmail").value.trim(),password=$("#lPass").value;
+  if(!email||!password){$("#loginErr").textContent="Enter your email and password.";return;}
+  try{const r=await api("/api/admin/login",{method:"POST",body:JSON.stringify({email,password})});$("#lPass").value="";showApp(r.email);}
+  catch(err){$("#loginErr").textContent=err.message;}
+});
+$("#logoutBtn").onclick=async()=>{await api("/api/admin/logout",{method:"POST"}).catch(()=>{});showLogin();};
+
+// ---------- list ----------
+function qs(){const p=new URLSearchParams();if(state.status)p.set("status",state.status);if(state.role)p.set("role",state.role);if(state.q)p.set("q",state.q);if(state.sort)p.set("sort",state.sort);return p.toString();}
+async function load(){
+  try{const r=await api("/api/admin/applications?"+qs());state.apps=r.applications;state.stats=r.stats;state.roleCounts=r.roleCounts;render();}
+  catch(err){if(!$("#appView").hidden)toast(err.message);}
+}
+function render(){
+  const s=state.stats;
+  $("#stats").innerHTML=[["","All applicants",s.total]].concat(STATUSES.map(k=>[k,k,s[k]])).map(([k,label,n])=>
+    `<button class="stat" type="button" data-status="${k}" aria-pressed="${state.status===k}"><span class="k">${k?`<span class="dot ${k}"></span>`:""}${esc(label)}</span><span class="n">${n||0}</span></button>`).join("");
+  $("#rolebar").innerHTML=[["","All roles"]].concat(Object.entries(ROLES)).map(([k,label])=>
+    `<button type="button" data-role="${k}" aria-pressed="${state.role===k}">${esc(label)}${k?`<b>${state.roleCounts[k]||0}</b>`:""}</button>`).join("");
+  const rows=$("#rows");
+  rows.innerHTML=state.apps.map(a=>`<tr tabindex="0" data-id="${a.id}">
+    <td><div class="name">${esc(a.firstName+" "+a.lastName)}</div><div class="sub">${esc(a.email)}</div></td>
+    <td><div>${esc(a.school)}</div><div class="sub">${esc(a.course)} · ${esc(a.year)}</div></td>
+    <td>${a.roles.map(r=>`<span class="rtag" title="${esc(ROLES[r])}">${SHORT[r]}</span>`).join("")}</td>
+    <td>${esc(a.level)}</td>
+    <td><span class="status"><span class="dot ${a.status}"></span>${a.status}</span></td>
+    <td class="ref">${esc(a.ref)}</td>
+    <td class="date">${fmtDate(a.createdAt)}</td></tr>`).join("");
+  const empty=$("#empty");
+  const filtered=state.status||state.role||state.q;
+  if(!state.apps.length){
+    empty.hidden=false;
+    empty.innerHTML=filtered?`<strong>No applicants match these filters</strong><span>Try a different search, role or status.</span>`:`<strong>No applications yet</strong><span>When students submit the form on the public site, they'll show up here.</span>`;
+  }else empty.hidden=true;
+  $("#countLine").textContent=state.apps.length?`showing ${state.apps.length} of ${s.total} applicant${s.total===1?"":"s"}`:"";
+}
+$("#stats").addEventListener("click",e=>{const b=e.target.closest(".stat");if(!b)return;state.status=b.dataset.status;load();});
+$("#rolebar").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;state.role=b.dataset.role;load();});
+let qt;$("#q").addEventListener("input",e=>{clearTimeout(qt);qt=setTimeout(()=>{state.q=e.target.value.trim();load();},250);});
+$("#sort").addEventListener("change",e=>{state.sort=e.target.value;load();});
+$("#rows").addEventListener("click",e=>{const tr=e.target.closest("tr");if(tr)openDrawer(Number(tr.dataset.id));});
+$("#rows").addEventListener("keydown",e=>{if(e.key==="Enter"){const tr=e.target.closest("tr");if(tr)openDrawer(Number(tr.dataset.id));}});
+$("#csvBtn").onclick=()=>{location.href="/api/admin/applications.csv?"+qs();};
+
+// ---------- detail drawer ----------
+async function openDrawer(id){
+  lastFocus=document.activeElement;
+  let a;try{a=await api("/api/admin/applications/"+id);}catch(err){toast(err.message);return;}
+  const d=$("#drawer");
+  d.innerHTML=`<header><div><span class="label mono">${esc(a.ref)}</span><h2 id="dName" style="margin-top:.4rem">${esc(a.firstName+" "+a.lastName)}</h2>
+      <div class="sub" style="color:var(--muted);margin-top:.3rem;font-size:.9rem">Applied ${fmtDateTime(a.createdAt)}</div></div>
+      <button class="x" type="button" id="dClose" aria-label="Close">×</button></header>
+    <div class="content">
+      <div><span class="label">Status</span><div class="status-pick" id="dStatus" style="margin-top:.6rem">${STATUSES.map(s=>`<button type="button" data-s="${s}" aria-pressed="${a.status===s}"><span class="dot ${s}"></span>${s}</button>`).join("")}</div></div>
+      <dl class="kv">
+        <dt>Email</dt><dd><span id="dEmail">${esc(a.email)}</span> <button class="btn btn-ghost btn-sm" type="button" id="copyEmail" style="padding:.2rem .55rem;font-size:.75rem;margin-left:.3rem">Copy</button></dd>
+        <dt>School</dt><dd>${esc(a.school)}</dd>
+        <dt>Course</dt><dd>${esc(a.course)} · ${esc(a.year)}</dd>
+        <dt>Roles</dt><dd>${a.roles.map(r=>esc(ROLES[r])).join(", ")}</dd>
+        <dt>Level</dt><dd>${esc(a.level)}</dd>
+        <dt>Skills</dt><dd class="${a.skills.length?"":"empty"}">${a.skills.length?a.skills.map(s=>`<span class="rtag">${esc(s)}</span>`).join(""):"none listed"}</dd>
+        <dt>Hours</dt><dd>${esc(a.hours)} per week</dd>
+        <dt>Portfolio</dt><dd class="${a.portfolio?"":"empty"}">${a.portfolio?`<a href="${esc(a.portfolio)}" target="_blank" rel="noopener noreferrer nofollow" style="color:var(--sand)">${esc(a.portfolio)}</a>`:"not provided"}</dd>
+      </dl>
+      <div><span class="label">Why they want to join</span><div class="motivation" style="margin-top:.6rem">${esc(a.motivation)}</div></div>
+      <div class="field"><label for="dNotes">Internal notes <span class="opt">(only admins see these)</span></label><textarea id="dNotes" maxlength="2000" placeholder="Interview notes, team placement ideas…" style="min-height:110px">${esc(a.notes)}</textarea>
+        <div style="display:flex;gap:.7rem;align-items:center"><button class="btn btn-ghost btn-sm" type="button" id="saveNotes">Save notes</button><span class="saved" id="notesSaved"></span></div></div>
+      <div class="danger-zone" id="dz"><button class="btn btn-danger btn-sm" type="button" id="delBtn">Delete application</button></div>
+    </div>`;
+  d.hidden=false;$("#scrim").hidden=false;document.body.style.overflow="hidden";
+  $("#dClose").focus();
+  $("#dClose").onclick=closeDrawer;
+  $("#dStatus").onclick=async e=>{const b=e.target.closest("button");if(!b)return;
+    try{const u=await api("/api/admin/applications/"+a.id,{method:"PATCH",body:JSON.stringify({status:b.dataset.s})});
+      a.status=u.status;$("#dStatus").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===u.status));toast("Marked as "+u.status);load();}
+    catch(err){toast(err.message);}};
+  $("#saveNotes").onclick=async()=>{try{await api("/api/admin/applications/"+a.id,{method:"PATCH",body:JSON.stringify({notes:$("#dNotes").value})});$("#notesSaved").textContent="saved";setTimeout(()=>$("#notesSaved").textContent="",2000);}catch(err){toast(err.message);}};
+  $("#copyEmail").onclick=async()=>{try{await navigator.clipboard.writeText(a.email);toast("Email copied");}catch{const r=document.createRange();r.selectNodeContents($("#dEmail"));const s=getSelection();s.removeAllRanges();s.addRange(r);}};
+  $("#delBtn").onclick=()=>{
+    $("#dz").innerHTML=`<span style="font-size:.9rem">Delete this application for good?</span><button class="btn btn-danger btn-sm" type="button" id="delYes">Yes, delete</button><button class="btn btn-ghost btn-sm" type="button" id="delNo">Keep it</button>`;
+    $("#delNo").onclick=()=>openDrawer(a.id);
+    $("#delYes").onclick=async()=>{try{await api("/api/admin/applications/"+a.id,{method:"DELETE"});closeDrawer();toast("Application deleted");load();}catch(err){toast(err.message);}};
+  };
+}
+function closeDrawer(){$("#drawer").hidden=true;$("#scrim").hidden=true;document.body.style.overflow="";if(lastFocus&&document.contains(lastFocus))lastFocus.focus();}
+$("#scrim").onclick=closeDrawer;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("#modal").hidden)closeModal();else if(!$("#drawer").hidden)closeDrawer();}});
+
+// ---------- change password ----------
+function closeModal(){$("#modal").hidden=true;$("#scrim").hidden=$("#drawer").hidden;}
+$("#pwBtn").onclick=()=>{
+  const m=$("#modal");
+  m.innerHTML=`<form class="card" id="pwForm" novalidate><h3>Change password</h3>
+    <div class="field"><label for="pwCur">Current password</label><input id="pwCur" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="pwNew">New password</label><input id="pwNew" type="password" autocomplete="new-password"><span class="hint">At least 10 characters.</span></div>
+    <div class="form-err" id="pwErr" role="alert"></div>
+    <div style="display:flex;gap:.6rem;justify-content:flex-end"><button class="btn btn-ghost btn-sm" type="button" id="pwCancel">Cancel</button><button class="btn btn-primary btn-sm" type="submit">Update password</button></div></form>`;
+  m.hidden=false;$("#scrim").hidden=false;$("#pwCur").focus();
+  $("#pwCancel").onclick=closeModal;
+  $("#pwForm").onsubmit=async e=>{e.preventDefault();
+    try{await api("/api/admin/password",{method:"POST",body:JSON.stringify({current:$("#pwCur").value,next:$("#pwNew").value})});closeModal();toast("Password updated");}
+    catch(err){$("#pwErr").textContent=err.message;}};
+};
+
+// ---------- boot ----------
+fetch("/api/admin/me",{credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(me=>me?showApp(me.email):showLogin()).catch(showLogin);
+})();
+</script>
+</body>
+</html>
