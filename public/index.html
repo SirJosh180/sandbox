@@ -116,6 +116,7 @@ devops      Faye     CI pipeline ✓
       <div>
         <span class="label">FAQ</span>
         <h2 style="margin-top:1rem">Questions students ask first</h2>
+        <div class="faq-cubit"><div class="cubit-inline" data-cubit="hmm"></div><p>Still stuck? Tap Cubit in the corner for tips while you apply.</p></div>
       </div>
       <div>
         <details open><summary>Do I need experience to join?</summary><p>No. Beginners are welcome on every track. We ask about your current skills only to balance teams, so each team has a mix of people who are learning and people who can help.</p></details>
@@ -390,6 +391,7 @@ form.addEventListener("submit",async e=>{
   try{localStorage.removeItem(KEY);}catch(e){}
   const roleNames=d.roles.map(r=>ROLES.find(x=>x.id===r).name);
   $("#formArea").innerHTML=`<div class="done" tabindex="-1" id="done">
+    <div class="cubit-inline">${window.Cubit?Cubit.svg("build",{title:"Cubit celebrating your application"}):""}</div>
     <span class="badge">● application received</span>
     <h3>You're in the queue, ${esc(d.firstName)}.</h3>
     <p class="lede">Thanks for applying to SandBox. We'll review your application and email <strong>${esc(d.email)}</strong> with your team placement.</p>
@@ -409,6 +411,11 @@ function focusField(k){
   const inp=f.querySelector("input,select,textarea");if(inp)setTimeout(()=>inp.focus({preventScroll:true}),300);
 }
 })();
+</script>
+<script src="/cubit/cubit.js"></script>
+<script>
+document.querySelectorAll("[data-cubit]").forEach(function(el){el.innerHTML=Cubit.svg(el.dataset.cubit);});
+Cubit.helper();
 </script>
 </body>
 </html>

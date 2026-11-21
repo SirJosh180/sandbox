@@ -1,0 +1,27 @@
+<svg class="cubit cubit--oops" viewBox="-8 -10 228 234" role="img" aria-label="Cubit found a bug" xmlns="http://www.w3.org/2000/svg"><style>/* ---------------- Cubit, the helper buddy ---------------- */
+
+.cubit *{transform-box:view-box}
+.cubit .cb-body{animation:cb-bob 2.8s ease-in-out infinite}
+.cubit .cb-shadow{transform-origin:102px 212px;animation:cb-shadow 2.8s ease-in-out infinite}
+.cubit .cb-eyes{transform-origin:99px 98px;animation:cb-blink 4.5s infinite}
+.cubit .cb-prop{transform-origin:104px 14px;animation:cb-float 2.4s ease-in-out infinite}
+.cubit .cb-wave{transform-origin:170px 116px;animation:cb-wave 1.6s ease-in-out infinite}
+.cubit .cb-hammer{transform-origin:170px 116px;animation:cb-hammer .9s ease-in-out infinite}
+.cubit--hmm .cb-prop{animation:cb-tilt 2s ease-in-out infinite}
+.cubit--oops .cb-body{animation:cb-shake .5s ease-in-out infinite}
+.cubit--oops .cb-prop{animation:cb-tumble 1.4s ease-in-out infinite}
+.cubit .cb-panic{transform-origin:105px 112px;animation:cb-panic .35s ease-in-out infinite alternate}
+.cubit .cb-drop{animation:cb-drop 1.2s ease-in infinite}
+@keyframes cb-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes cb-shadow{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.88)}}
+@keyframes cb-blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes cb-float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(8deg)}}
+@keyframes cb-tilt{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg) translateY(-3px)}}
+@keyframes cb-wave{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(10deg)}}
+@keyframes cb-hammer{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg)}}
+@keyframes cb-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px) rotate(-1deg)}75%{transform:translateX(3px) rotate(1deg)}}
+@keyframes cb-tumble{0%{transform:rotate(0)}50%{transform:rotate(180deg) translateY(-4px)}100%{transform:rotate(360deg)}}
+@keyframes cb-panic{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+@keyframes cb-drop{0%{transform:translateY(0);opacity:1}100%{transform:translateY(14px);opacity:0}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style><ellipse class="cb-shadow" cx="102" cy="212" rx="56" ry="7" fill="rgba(0,0,0,.18)"/><g class="cb-prop" transform="rotate(25 104 12)"><polygon points="104,0 116,6 104,12 92,6" fill="#fbe3ad"/><polygon points="92,6 104,12 104,26 92,20" fill="#f4cf82"/><polygon points="116,6 104,12 104,26 116,20" fill="#e3a94a"/></g><g class="cb-body"><g class="cb-legs"><path d="M80 168 v24 M124 168 v24" stroke="#10141b" stroke-width="7" stroke-linecap="round"/><ellipse cx="80" cy="198" rx="15" ry="7" fill="#e3a94a"/><ellipse cx="126" cy="198" rx="15" ry="7" fill="#e3a94a"/></g><g class="cb-arm-l cb-panic"><path d="M40 112 q-18 -6 -22 -34" fill="none" stroke="#10141b" stroke-width="6" stroke-linecap="round"/><circle cx="18" cy="74" r="8" fill="#f4cf82"/></g><g class="cb-arm-r cb-panic"><path d="M170 112 q18 -6 22 -34" fill="none" stroke="#10141b" stroke-width="6" stroke-linecap="round"/><circle cx="192" cy="74" r="8" fill="#f4cf82"/></g><path class="cb-drop" d="M30 92 q-4 7 0 10 q4 -3 0 -10z" fill="#7cc4ff"/><polygon points="52,46 74,30 176,30 154,46" fill="#a8f0d8"/><polygon points="154,46 176,30 176,148 154,172" fill="#2fbf93"/><rect x="40" y="44" width="118" height="128" rx="14" fill="#5ee3bc"/><rect x="54" y="62" width="90" height="72" rx="11" fill="#10141b"/><g class="cb-face"><g stroke="#ff8a7a" stroke-width="5" stroke-linecap="round"><path d="M70 90 l13 13 M83 90 l-13 13"/><path d="M107 90 l13 13 M120 90 l-13 13"/></g><path d="M76 122 q5 -7 9.5 0 t9.5 0 t9.5 0 t9.5 0" fill="none" stroke="#ff8a7a" stroke-width="4.5" stroke-linecap="round"/></g><text x="99" y="158" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12" fill="#10141b">&gt;_</text></g></svg>

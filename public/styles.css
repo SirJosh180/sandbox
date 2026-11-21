@@ -197,3 +197,59 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sand);bo
 
 footer{border-top:1px solid var(--line);padding-block:2.5rem;color:var(--muted);font-size:.85rem}
 footer .wrap{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:center}
+
+/* ---------------- Cubit, the helper buddy ---------------- */
+.cubit{display:block;width:100%;height:auto;overflow:visible}
+.cubit *{transform-box:view-box}
+.cubit .cb-body{animation:cb-bob 2.8s ease-in-out infinite}
+.cubit .cb-shadow{transform-origin:102px 212px;animation:cb-shadow 2.8s ease-in-out infinite}
+.cubit .cb-eyes{transform-origin:99px 98px;animation:cb-blink 4.5s infinite}
+.cubit .cb-prop{transform-origin:104px 14px;animation:cb-float 2.4s ease-in-out infinite}
+.cubit .cb-wave{transform-origin:170px 116px;animation:cb-wave 1.6s ease-in-out infinite}
+.cubit .cb-hammer{transform-origin:170px 116px;animation:cb-hammer .9s ease-in-out infinite}
+.cubit--hmm .cb-prop{animation:cb-tilt 2s ease-in-out infinite}
+.cubit--oops .cb-body{animation:cb-shake .5s ease-in-out infinite}
+.cubit--oops .cb-prop{animation:cb-tumble 1.4s ease-in-out infinite}
+.cubit .cb-panic{transform-origin:105px 112px;animation:cb-panic .35s ease-in-out infinite alternate}
+.cubit .cb-drop{animation:cb-drop 1.2s ease-in infinite}
+@keyframes cb-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes cb-shadow{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.88)}}
+@keyframes cb-blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+@keyframes cb-float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(8deg)}}
+@keyframes cb-tilt{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg) translateY(-3px)}}
+@keyframes cb-wave{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(10deg)}}
+@keyframes cb-hammer{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg)}}
+@keyframes cb-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px) rotate(-1deg)}75%{transform:translateX(3px) rotate(1deg)}}
+@keyframes cb-tumble{0%{transform:rotate(0)}50%{transform:rotate(180deg) translateY(-4px)}100%{transform:rotate(360deg)}}
+@keyframes cb-panic{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+@keyframes cb-drop{0%{transform:translateY(0);opacity:1}100%{transform:translateY(14px);opacity:0}}
+
+.cubit-helper{position:fixed;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:55;display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;pointer-events:none}
+.cubit-helper>*{pointer-events:auto}
+.cubit-btn{all:unset;box-sizing:border-box;cursor:pointer;width:88px;padding:8px 6px 4px;border-radius:22px;background:var(--cream);border:2px solid var(--cream);box-shadow:0 14px 36px -12px rgba(0,0,0,.7);transition:transform .15s ease,border-color .15s ease}
+.cubit-btn:hover{transform:translateY(-2px);border-color:var(--mint)}
+.cubit-btn:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+.cubit-swap .cubit{animation:cb-hop .45s ease}
+@keyframes cb-hop{0%{transform:scale(.85) translateY(6px)}60%{transform:scale(1.06) translateY(-4px)}100%{transform:none}}
+.cubit-bubble{position:relative;width:min(300px,calc(100vw - 32px));background:var(--cream);color:var(--ink);border-radius:16px 16px 4px 16px;padding:.9rem 2.2rem .95rem 1rem;box-shadow:0 18px 40px -14px rgba(0,0,0,.7);font-size:.9rem;line-height:1.5}
+.cubit-bubble::after{content:"";position:absolute;right:30px;bottom:-8px;border:8px solid transparent;border-top-color:var(--cream);border-bottom:0}
+.cubit-title{display:block;font-family:var(--f-display);font-weight:800;font-size:1rem;margin-bottom:.2rem}
+.cubit-text{margin:0;color:#2a313b}
+.cubit-close{all:unset;cursor:pointer;position:absolute;top:.45rem;right:.55rem;width:26px;height:26px;display:grid;place-items:center;border-radius:8px;color:#5d6675;font-size:1.15rem}
+.cubit-close:hover{background:rgba(16,20,27,.08);color:var(--ink)}
+.cubit-close:focus-visible,.cubit-action:focus-visible{outline:2px solid #2fbf93;outline-offset:2px}
+.cubit-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.cubit-actions:empty{display:none}
+.cubit-actions{margin-top:.65rem}
+.cubit-action{all:unset;cursor:pointer;font-weight:600;font-size:.82rem;padding:.4rem .75rem;border-radius:999px;background:var(--ink);color:var(--cream)}
+.cubit-action:hover{background:#2a3340}
+.cubit-pop{animation:cb-pop .3s ease}
+@keyframes cb-pop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+@media (max-width:520px){.cubit-btn{width:68px}.cubit-bubble{font-size:.85rem}}
+
+/* Cubit in page content */
+.cubit-inline{width:120px;flex:none;background:var(--cream);border-radius:20px;padding:10px 8px 4px}
+.done .cubit-inline{width:110px}
+.faq-cubit{display:flex;align-items:flex-end;gap:1rem;margin-top:1.6rem}
+.faq-cubit p{font-size:.9rem;color:var(--muted);max-width:28ch}
+@media (prefers-reduced-motion:reduce){.cubit *,.cubit,.cubit-pop{animation:none!important}}

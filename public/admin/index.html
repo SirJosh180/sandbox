@@ -165,6 +165,7 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 <div class="modal" id="modal" hidden></div>
 <div class="toast" id="toast" hidden role="status"></div>
 
+<script src="/cubit/cubit.js"></script>
 <script>
 (function(){
 const ROLES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
@@ -223,7 +224,7 @@ function render(){
   const filtered=state.status||state.role||state.q;
   if(!state.apps.length){
     empty.hidden=false;
-    empty.innerHTML=filtered?`<strong>No applicants match these filters</strong><span>Try a different search, role or status.</span>`:`<strong>No applications yet</strong><span>When students submit the form on the public site, they'll show up here.</span>`;
+    empty.innerHTML=(window.Cubit?`<div class="cubit-inline" style="width:110px">${Cubit.svg(filtered?"hmm":"hello")}</div>`:"")+(filtered?`<strong>No applicants match these filters</strong><span>Try a different search, role or status.</span>`:`<strong>No applications yet</strong><span>When students submit the form on the public site, they'll show up here.</span>`);
   }else empty.hidden=true;
   $("#countLine").textContent=state.apps.length?`showing ${state.apps.length} of ${s.total} applicant${s.total===1?"":"s"}`:"";
 }

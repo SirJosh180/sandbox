@@ -57,3 +57,7 @@ The admin account is created the first time the app gets a request. Locally, if 
 - Passwords are hashed with scrypt. Sessions are random tokens stored hashed in the database, sent as `HttpOnly`, `SameSite=Strict` cookies that expire after 7 days.
 - Sign-in is rate limited (10 attempts per 15 minutes per IP), and so are submissions (10 per hour per IP). Limits are stored in the database so they hold across serverless instances. The form also has a hidden honeypot field to catch simple bots.
 - All input is validated on the server, not only in the browser. CSV export guards against spreadsheet formula injection.
+
+## Cubit, the helper buddy
+
+Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four moods (`hello`, `build`, `hmm`, `oops`) and runs the floating helper on the public site, which greets visitors, cheers on form progress, gives tips, and reacts to form errors. Standalone animated icons for each mood are in `public/cubit/cubit-<mood>.svg` for use elsewhere (they look best on a light background).
