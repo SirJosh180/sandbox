@@ -33,7 +33,7 @@
   }
 
   function hand(x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="8" fill="' + C.sand + '"/>'; }
-  function arm(d) { return '<path d="' + d + '" fill="none" stroke="' + C.ink + '" stroke-width="6" stroke-linecap="round"/>'; }
+  function arm(d) { return '<path class="cb-limb" d="' + d + '" fill="none" stroke="' + C.ink + '" stroke-width="6" stroke-linecap="round"/>'; }
 
   function arms(mood) {
     var leftDown = '<g class="cb-arm-l">' + arm('M40 112 q-18 6 -20 30') + hand(20, 146) + '</g>';
@@ -73,7 +73,7 @@
       '<ellipse class="cb-shadow" cx="102" cy="212" rx="56" ry="7" fill="' + C.shadow + '"/>' +
       prop(mood) +
       '<g class="cb-body">' +
-        '<g class="cb-legs"><path d="M80 168 v24 M124 168 v24" stroke="' + C.ink + '" stroke-width="7" stroke-linecap="round"/>' +
+        '<g class="cb-legs"><path class="cb-limb" d="M80 168 v24 M124 168 v24" stroke="' + C.ink + '" stroke-width="7" stroke-linecap="round"/>' +
         '<ellipse cx="80" cy="198" rx="15" ry="7" fill="' + C.gold + '"/><ellipse cx="126" cy="198" rx="15" ry="7" fill="' + C.gold + '"/></g>' +
         arms(mood) +
         '<polygon points="52,46 74,30 176,30 154,46" fill="' + C.mintTop + '"/>' +
