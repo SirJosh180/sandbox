@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/admin/admin-views.css">
 <style>
 /* Admin layout: top bar, status strip that doubles as filter tabs, toolbar, table; detail opens in a side drawer. */
 :root{--pending:#f4cf82;--shortlisted:#8ab4ff;--accepted:#5ee3bc;--rejected:#ff8a7a}
@@ -19,6 +20,11 @@ body{min-height:100vh}
 .topbar .who{display:flex;align-items:center;gap:.8rem;font-size:.85rem;color:var(--muted);flex-wrap:wrap;justify-content:flex-end}
 .pill-tag{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);border:1px solid color-mix(in srgb,var(--mint) 40%,transparent);padding:.2rem .5rem;border-radius:6px}
 .btn-sm{padding:.55rem .9rem;font-size:.85rem}
+.tabs-nav{display:flex;gap:.25rem;background:var(--ink-2);border:1px solid var(--line);border-radius:12px;padding:.25rem;overflow-x:auto}
+.tabs-nav a{text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:600;padding:.5rem .85rem;border-radius:9px;white-space:nowrap}
+.tabs-nav a:hover{color:var(--cream)}
+.tabs-nav a[aria-current="page"]{background:var(--ink-3);color:var(--cream)}
+@media (max-width:860px){.topbar .wrap{flex-wrap:wrap}.tabs-nav{order:3;width:100%}}
 main.admin .wrap{max-width:1400px}
 main.admin{padding-block:2rem 4rem}
 
@@ -109,6 +115,11 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="/admin"><svg aria-hidden="true"><use href="#cube"/></svg><span class="wordmark">Sand<b>Box</b></span><span class="pill-tag">Admin</span></a>
+    <nav class="tabs-nav" id="nav" hidden aria-label="Admin sections">
+      <a href="#overview" data-view="overview">Overview</a>
+      <a href="#applicants" data-view="applicants">Applicants</a>
+      <a href="#content" data-view="content">Paths &amp; modules</a>
+    </nav>
     <div class="who" id="who" hidden>
       <span id="whoEmail"></span>
       <button class="btn btn-ghost btn-sm" type="button" id="pwBtn">Change password</button>
@@ -158,6 +169,8 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
     <p class="count-line" id="countLine"></p>
   </div>
 </main>
+<main class="admin" id="overviewView" hidden><div class="wrap" id="overviewRoot"></div></main>
+<main class="admin" id="contentView" hidden><div class="wrap" id="contentRoot"></div></main>
 
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dName"></aside>
@@ -166,6 +179,7 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="/cubit/cubit.js"></script>
+<script src="/admin/admin-views.js"></script>
 <script>
 (function(){
 const ROLES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
@@ -188,8 +202,19 @@ const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString(undefined,
 const fmtDateTime=iso=>new Date(iso).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
 
 // ---------- auth ----------
-function showLogin(){$("#appView").hidden=true;$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
-function showApp(email){$("#loginView").hidden=true;$("#appView").hidden=false;$("#who").hidden=false;$("#whoEmail").textContent=email;load();}
+function showLogin(){["#appView","#overviewView","#contentView","#nav"].forEach(x=>$(x).hidden=true);$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
+function showApp(email){$("#loginView").hidden=true;$("#nav").hidden=false;$("#who").hidden=false;$("#whoEmail").textContent=email;signedIn=true;route();}
+let signedIn=false;
+function route(){
+  if(!signedIn)return;
+  let v=location.hash.slice(1);if(!["overview","applicants","content"].includes(v))v="overview";
+  if(window.AdminViews&&AdminViews.guard&&!AdminViews.guard(v))return;
+  $("#overviewView").hidden=v!=="overview";$("#appView").hidden=v!=="applicants";$("#contentView").hidden=v!=="content";
+  document.querySelectorAll("#nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===v?"page":"false"));
+  if(v==="applicants"){try{const f=sessionStorage.getItem("sbx-status-filter");if(f){state.status=f;sessionStorage.removeItem("sbx-status-filter");}}catch(e){}load();}else if(window.AdminViews)AdminViews[v]();
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
 $("#loginForm").addEventListener("submit",async e=>{
   e.preventDefault();$("#loginErr").textContent="";
   const email=$("#lEmail").value.trim(),password=$("#lPass").value;
@@ -304,6 +329,7 @@ $("#pwBtn").onclick=()=>{
     catch(err){$("#pwErr").textContent=err.message;}};
 };
 
+window.SBX={api,toast,esc,ROLES,openApplicant:openDrawer,go:v=>{location.hash=v;}};
 // ---------- boot ----------
 fetch("/api/admin/me",{credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(me=>me?showApp(me.email):showLogin()).catch(showLogin);
 })();

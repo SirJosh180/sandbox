@@ -4,7 +4,7 @@ Public website where students learn about SandBox and apply, plus a password-pro
 
 - `/` is the public site with the application form.
 - `/portal` is the student portal: students sign in to follow their application. Once accepted and given a path, the portal becomes a workspace for that path (its own colour, modules to tick off, tools and a path-specific panel).
-- `/admin` is the admin dashboard: sign in, see every applicant, search, filter by role and status, open an application, set its status (pending, shortlisted, accepted, rejected), add internal notes, delete, and export to CSV.
+- `/admin` is the admin portal. **Overview** shows applications per day, the status pipeline, role demand, path progress and items that need attention. **Paths & modules** is a CMS for each path's student-portal content. **Applicants** is the dashboard: sign in, see every applicant, search, filter by role and status, open an application, set its status (pending, shortlisted, accepted, rejected), add internal notes, delete, and export to CSV.
 
 ## Deploy on Vercel
 
@@ -67,4 +67,4 @@ Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four 
 
 - Students create a password on the application form, or later at `/portal` → **Set up my account** using their email and reference number.
 - Admins open an applicant and choose an **Assigned path**. When the application is **accepted** and has a path, the student's portal switches to that path.
-- Paths live in `lib/paths.js`: name, accent colour, mission, tools, the side panel (rituals, checklist or pipeline) and the modules. Edit that file to change the curriculum. Keep module ids stable once students start ticking them off.
+- Path content (name, accent colour, mission, modules, side panel and toolkit) is stored in the database and edited in the admin portal under **Paths & modules**. Saving updates every student's portal straight away. `lib/paths.js` holds the defaults used to seed each path and for **Reset to defaults**.
