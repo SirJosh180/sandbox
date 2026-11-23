@@ -119,6 +119,8 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
       <a href="#overview" data-view="overview">Overview</a>
       <a href="#applicants" data-view="applicants">Applicants</a>
       <a href="#content" data-view="content">Paths &amp; modules</a>
+      <a href="#reviews" data-view="reviews">Submissions</a>
+      <a href="#projects" data-view="projects">Projects</a>
       <a href="#messages" data-view="messages">Messages</a>
     </nav>
     <div class="who" id="who" hidden>
@@ -172,6 +174,8 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 </main>
 <main class="admin" id="overviewView" hidden><div class="wrap" id="overviewRoot"></div></main>
 <main class="admin" id="contentView" hidden><div class="wrap" id="contentRoot"></div></main>
+<main class="admin" id="reviewsView" hidden><div class="wrap" id="reviewsRoot"></div></main>
+<main class="admin" id="projectsView" hidden><div class="wrap" id="projectsRoot"></div></main>
 <main class="admin" id="messagesView" hidden><div class="wrap" id="messagesRoot"></div></main>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -183,6 +187,7 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 <script src="/cubit/cubit.js"></script>
 <script src="/admin/admin-views.js"></script>
 <script src="/admin/admin-chat.js"></script>
+<script src="/admin/admin-work.js"></script>
 <script>
 (function(){
 const ROLES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
@@ -205,16 +210,16 @@ const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString(undefined,
 const fmtDateTime=iso=>new Date(iso).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
 
 // ---------- auth ----------
-function showLogin(){["#appView","#overviewView","#contentView","#messagesView","#nav"].forEach(x=>$(x).hidden=true);$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
+function showLogin(){["#appView","#overviewView","#contentView","#messagesView","#reviewsView","#projectsView","#nav"].forEach(x=>$(x).hidden=true);$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
 function showApp(email){$("#loginView").hidden=true;$("#nav").hidden=false;$("#who").hidden=false;$("#whoEmail").textContent=email;signedIn=true;route();}
 let signedIn=false;
 function route(){
   if(!signedIn)return;
-  let [v,arg]=location.hash.slice(1).split("/");if(!["overview","applicants","content","messages"].includes(v))v="overview";
+  let [v,arg]=location.hash.slice(1).split("/");if(!["overview","applicants","content","messages","reviews","projects"].includes(v))v="overview";
   if(window.AdminViews&&AdminViews.guard&&!AdminViews.guard(v))return;
-  $("#overviewView").hidden=v!=="overview";$("#appView").hidden=v!=="applicants";$("#contentView").hidden=v!=="content";$("#messagesView").hidden=v!=="messages";
+  $("#overviewView").hidden=v!=="overview";$("#appView").hidden=v!=="applicants";$("#contentView").hidden=v!=="content";$("#messagesView").hidden=v!=="messages";$("#reviewsView").hidden=v!=="reviews";$("#projectsView").hidden=v!=="projects";
   document.querySelectorAll("#nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===v?"page":"false"));
-  if(v==="applicants"){try{const f=sessionStorage.getItem("sbx-status-filter");if(f){state.status=f;sessionStorage.removeItem("sbx-status-filter");}}catch(e){}load();}else if(v==="messages"){if(window.AdminChat)AdminChat.messages(arg);}else if(window.AdminViews)AdminViews[v]();
+  if(v==="applicants"){try{const f=sessionStorage.getItem("sbx-status-filter");if(f){state.status=f;sessionStorage.removeItem("sbx-status-filter");}}catch(e){}load();}else if(v==="messages"){if(window.AdminChat)AdminChat.messages(arg);}else if(v==="reviews"||v==="projects"){if(window.AdminWork)AdminWork[v]();}else if(window.AdminViews)AdminViews[v]();
   window.scrollTo(0,0);
   if(window.AdminChat&&v!=="messages")AdminChat.refreshBadge();
 }

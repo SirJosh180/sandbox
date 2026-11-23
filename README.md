@@ -93,3 +93,14 @@ Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four 
 - Clicking Cubit opens a list of notifications with quick actions: **Read**, **Show me** (scrolls to the next module), **Watch**, **Ask the team**.
 - Cubit pops up with a burst of emoji when the team sends a new message, when every module is done, and once per browser session as a greeting. Its mood changes with the student's situation.
 - The chat has an emoji picker and Cubit's suggested questions for students who haven't written yet. The tab title shows the unread count.
+
+## Output submissions
+
+- Every module in the student portal has **Submit output**: a link to the work (GitHub, Figma, Drive, a live site) and an optional note.
+- Admins review them under **Submissions**: give a score from 0 to 100 with optional feedback (**Grade**), or **Return with comment** so the student can fix and resubmit. Grading also ticks the module off for the student.
+- Students see the status on each module: ⏳ waiting for review, 🔁 returned with the comment, or 🏅 the grade and feedback. Cubit tells them when something is graded or returned. The Submissions tab shows how many are waiting.
+
+## Projects and the virtual office
+
+- Admins create projects under **Projects**: name, client, description, a meeting room link and a project files link, then add accepted students with a role and an optional team lead.
+- Students on a project get a **Virtual office** in their portal with the project details, a **Join meeting room** button and a desk card for each teammate (name, role, path and email). Cubit announces new projects.
