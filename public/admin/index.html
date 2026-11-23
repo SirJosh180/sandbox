@@ -119,6 +119,7 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
       <a href="#overview" data-view="overview">Overview</a>
       <a href="#applicants" data-view="applicants">Applicants</a>
       <a href="#content" data-view="content">Paths &amp; modules</a>
+      <a href="#messages" data-view="messages">Messages</a>
     </nav>
     <div class="who" id="who" hidden>
       <span id="whoEmail"></span>
@@ -171,6 +172,7 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 </main>
 <main class="admin" id="overviewView" hidden><div class="wrap" id="overviewRoot"></div></main>
 <main class="admin" id="contentView" hidden><div class="wrap" id="contentRoot"></div></main>
+<main class="admin" id="messagesView" hidden><div class="wrap" id="messagesRoot"></div></main>
 
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dName"></aside>
@@ -180,6 +182,7 @@ td.date{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);white-space
 
 <script src="/cubit/cubit.js"></script>
 <script src="/admin/admin-views.js"></script>
+<script src="/admin/admin-chat.js"></script>
 <script>
 (function(){
 const ROLES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
@@ -202,17 +205,18 @@ const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString(undefined,
 const fmtDateTime=iso=>new Date(iso).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
 
 // ---------- auth ----------
-function showLogin(){["#appView","#overviewView","#contentView","#nav"].forEach(x=>$(x).hidden=true);$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
+function showLogin(){["#appView","#overviewView","#contentView","#messagesView","#nav"].forEach(x=>$(x).hidden=true);$("#who").hidden=true;$("#loginView").hidden=false;closeDrawer();setTimeout(()=>$("#lEmail").focus(),50);}
 function showApp(email){$("#loginView").hidden=true;$("#nav").hidden=false;$("#who").hidden=false;$("#whoEmail").textContent=email;signedIn=true;route();}
 let signedIn=false;
 function route(){
   if(!signedIn)return;
-  let v=location.hash.slice(1);if(!["overview","applicants","content"].includes(v))v="overview";
+  let [v,arg]=location.hash.slice(1).split("/");if(!["overview","applicants","content","messages"].includes(v))v="overview";
   if(window.AdminViews&&AdminViews.guard&&!AdminViews.guard(v))return;
-  $("#overviewView").hidden=v!=="overview";$("#appView").hidden=v!=="applicants";$("#contentView").hidden=v!=="content";
+  $("#overviewView").hidden=v!=="overview";$("#appView").hidden=v!=="applicants";$("#contentView").hidden=v!=="content";$("#messagesView").hidden=v!=="messages";
   document.querySelectorAll("#nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===v?"page":"false"));
-  if(v==="applicants"){try{const f=sessionStorage.getItem("sbx-status-filter");if(f){state.status=f;sessionStorage.removeItem("sbx-status-filter");}}catch(e){}load();}else if(window.AdminViews)AdminViews[v]();
+  if(v==="applicants"){try{const f=sessionStorage.getItem("sbx-status-filter");if(f){state.status=f;sessionStorage.removeItem("sbx-status-filter");}}catch(e){}load();}else if(v==="messages"){if(window.AdminChat)AdminChat.messages(arg);}else if(window.AdminViews)AdminViews[v]();
   window.scrollTo(0,0);
+  if(window.AdminChat&&v!=="messages")AdminChat.refreshBadge();
 }
 window.addEventListener("hashchange",route);
 $("#loginForm").addEventListener("submit",async e=>{
@@ -287,6 +291,7 @@ async function openDrawer(id){
       <div><span class="label">Why they want to join</span><div class="motivation" style="margin-top:.6rem">${esc(a.motivation)}</div></div>
       <div class="field"><label for="dNotes">Internal notes <span class="opt">(only admins see these)</span></label><textarea id="dNotes" maxlength="2000" placeholder="Interview notes, team placement ideas…" style="min-height:110px">${esc(a.notes)}</textarea>
         <div style="display:flex;gap:.7rem;align-items:center"><button class="btn btn-ghost btn-sm" type="button" id="saveNotes">Save notes</button><span class="saved" id="notesSaved"></span></div></div>
+      ${a.studentId?`<div><button class="btn btn-ghost btn-sm" type="button" id="msgBtn">💬 Message ${esc(a.firstName)}</button></div>`:""}
       <div class="danger-zone" id="dz"><button class="btn btn-danger btn-sm" type="button" id="delBtn">Delete application</button></div>
     </div>`;
   d.hidden=false;$("#scrim").hidden=false;document.body.style.overflow="hidden";
@@ -302,6 +307,7 @@ async function openDrawer(id){
     catch(err){toast(err.message);}
   };
   $("#saveNotes").onclick=async()=>{try{await api("/api/admin/applications/"+a.id,{method:"PATCH",body:JSON.stringify({notes:$("#dNotes").value})});$("#notesSaved").textContent="saved";setTimeout(()=>$("#notesSaved").textContent="",2000);}catch(err){toast(err.message);}};
+  if($("#msgBtn"))$("#msgBtn").onclick=()=>{closeDrawer();location.hash="messages/"+a.studentId;};
   $("#copyEmail").onclick=async()=>{try{await navigator.clipboard.writeText(a.email);toast("Email copied");}catch{const r=document.createRange();r.selectNodeContents($("#dEmail"));const s=getSelection();s.removeAllRanges();s.addRange(r);}};
   $("#delBtn").onclick=()=>{
     $("#dz").innerHTML=`<span style="font-size:.9rem">Delete this application for good?</span><button class="btn btn-danger btn-sm" type="button" id="delYes">Yes, delete</button><button class="btn btn-ghost btn-sm" type="button" id="delNo">Keep it</button>`;

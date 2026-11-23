@@ -65,21 +65,26 @@
   }
 
   /* ---------------- CMS ---------------- */
-  const cms = { paths: [], current: null, draft: null, dirty: false, confirmReset: false };
+  const cms = { paths: [], current: null, draft: null, dirty: false, confirmReset: false, uploads: {}, linkOpen: {}, upCfg: null };
+  let keySeq = 0;
+  const withKeys = (p) => { p.modules.forEach((m) => { m._k = m._k || 'k' + (++keySeq); }); return p; };
   const clone = (o) => JSON.parse(JSON.stringify(o));
 
   async function content() {
     if (cms.dirty && cms.draft) { renderCms(); return; }
     const root = $('#contentRoot');
     if (!cms.paths.length) root.innerHTML = '<p style="color:var(--muted)">Loading…</p>';
-    try { cms.paths = await S().api('/api/admin/paths'); } catch (e) { S().toast(e.message); return; }
+    try {
+      cms.paths = await S().api('/api/admin/paths');
+      if (!cms.upCfg) cms.upCfg = await S().api('/api/admin/uploads/config').catch(() => ({ mode: 'none', maxMB: 0, types: [] }));
+    } catch (e) { S().toast(e.message); return; }
     if (!cms.current || !cms.paths.some((p) => p.id === cms.current)) cms.current = cms.paths[0].id;
     select(cms.current);
   }
   function select(id) {
     cms.current = id;
-    cms.draft = clone(cms.paths.find((p) => p.id === id));
-    cms.dirty = false; cms.confirmReset = false;
+    cms.draft = withKeys(clone(cms.paths.find((p) => p.id === id)));
+    cms.dirty = false; cms.confirmReset = false; cms.linkOpen = {};
     renderCms();
   }
   function markDirty() {
@@ -121,6 +126,7 @@
                   <div class="field"><label for="mt${i}">Title</label><input id="mt${i}" data-k="title" type="text" maxlength="100" value="${esc(m.title)}"></div>
                   <div class="field full"><label for="md${i}">Description</label><textarea id="md${i}" data-k="desc" maxlength="300">${esc(m.desc)}</textarea></div>
                   <div class="field full"><label for="mv${i}">Deliverable</label><input id="mv${i}" data-k="deliverable" type="text" maxlength="100" value="${esc(m.deliverable)}"></div>
+                  <div class="field full"><span class="flabel">Video <span class="opt">(optional, students watch it in their portal)</span></span>${videoField(m, i)}</div>
                   <span class="meta full">${stats.doneByModule[m.id] ? `${stats.doneByModule[m.id]} of ${stats.students} students done` : saved.modules.some((x) => x.id === m.id) ? 'no one has finished this yet' : 'new module, not saved yet'}</span>
                 </div>
                 <div class="tools-col">
@@ -170,6 +176,7 @@
     const root = $('#contentRoot'); const p = cms.draft;
     root.querySelectorAll('.path-item').forEach((b) => b.addEventListener('click', () => {
       if (b.dataset.id === p.id) return;
+      if (Object.keys(cms.uploads).length) { S().toast('Wait for the video upload to finish'); return; }
       if (cms.dirty) { S().toast('Save or discard your changes first'); return; }
       select(b.dataset.id);
     }));
@@ -201,6 +208,7 @@
       });
     }
     bindRep('#modList', () => p.modules, (i, k, v) => { p.modules[i][k] = k === 'week' ? v : v; });
+    bindVideos(root, p);
     bindRep('#pnList', () => p.panel.items, (i, k, v) => { p.panel.items[i][k] = v; });
     bindRep('#toolList', () => p.tools, (i, k, v) => { p.tools[i] = v; });
 
@@ -215,13 +223,14 @@
 
     const save = $('#saveBtn', root), discard = $('#discardBtn', root), reset = $('#resetBtn', root);
     if (save) save.addEventListener('click', async () => {
+      if (Object.keys(cms.uploads).length) { S().toast('Wait for the video upload to finish'); return; }
       save.disabled = true; save.textContent = 'Saving…';
       try {
         const out = await S().api('/api/admin/paths/' + p.id, { method: 'PUT', body: JSON.stringify(p) });
         cms.paths = cms.paths.map((x) => (x.id === out.id ? out : x)); cms.dirty = false; select(out.id); S().toast('Saved. Students see the changes now.');
       } catch (e) { S().toast(e.message); save.disabled = false; save.textContent = 'Save changes'; }
     });
-    if (discard) discard.addEventListener('click', () => { select(p.id); S().toast('Changes discarded'); });
+    if (discard) discard.addEventListener('click', () => { if (Object.keys(cms.uploads).length) { S().toast('Wait for the video upload to finish'); return; } select(p.id); S().toast('Changes discarded'); });
     if (reset) reset.addEventListener('click', () => { cms.confirmReset = true; renderCms(); });
     const yes = $('#resetYes', root), no = $('#resetNo', root);
     if (no) no.addEventListener('click', () => { cms.confirmReset = false; renderCms(); });
@@ -231,15 +240,140 @@
     });
   }
 
+
+  /* ---------- module videos ---------- */
+  const fmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(b >= 104857600 ? 0 : 1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+  function videoField(m, i) {
+    const up = cms.uploads[m._k];
+    if (up) {
+      return `<div class="vid-box is-up" data-k="${m._k}"><div class="vid-meta"><strong>Uploading ${esc(up.name)}</strong><span class="vid-sub"><span data-pct>${up.pct}</span>% of ${fmtSize(up.size)}</span>
+        <div class="vid-prog"><i data-bar style="width:${up.pct}%"></i></div></div>
+        <button class="btn btn-ghost btn-sm" type="button" data-vact="cancel">Cancel</button></div>`;
+    }
+    const v = m.video;
+    if (v) {
+      const thumb = v.kind === 'youtube' ? `<img src="https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg" alt="" loading="lazy">`
+        : v.kind === 'file' ? `<video src="${esc(v.url)}#t=1" preload="metadata" muted playsinline></video>` : '<span class="vid-ph">▶</span>';
+      const title = v.kind === 'file' ? (v.name || 'Uploaded video') : v.kind === 'youtube' ? 'YouTube video' : 'Vimeo video';
+      const sub = v.kind === 'file' ? (v.size ? fmtSize(v.size) + ' · uploaded' : 'uploaded') : `<a href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">${esc(v.url.replace(/^https:\/\/(www\.)?/, ''))}</a>`;
+      return `<div class="vid-box" data-k="${m._k}"><div class="vid-thumb">${thumb}</div><div class="vid-meta"><strong>${esc(title)}</strong><span class="vid-sub">${sub}</span></div>
+        <div class="vid-acts"><button class="btn btn-ghost btn-sm" type="button" data-vact="replace">Replace</button><button class="btn btn-ghost btn-sm vid-del" type="button" data-vact="remove">Remove</button></div></div>`;
+    }
+    const cfg = cms.upCfg || { mode: 'none' };
+    const link = cms.linkOpen[m._k];
+    return `<div class="vid-box is-empty" data-k="${m._k}">
+      ${link ? `<div class="vid-link"><input type="url" placeholder="Paste a YouTube or Vimeo link" aria-label="Video link for module ${i + 1}" data-vlink><button class="btn btn-primary btn-sm" type="button" data-vact="addlink">Add</button><button class="btn btn-ghost btn-sm" type="button" data-vact="closelink">Cancel</button></div>`
+        : `<button class="btn btn-ghost btn-sm" type="button" data-vact="upload" ${cfg.mode === 'none' ? 'disabled' : ''}>⇪ Upload video</button><button class="btn btn-ghost btn-sm" type="button" data-vact="openlink">Paste a link</button>
+           <span class="vid-sub">${cfg.mode === 'none' ? 'Uploads need a Vercel Blob store (see README). Links work now.' : `MP4, WebM or MOV, up to ${cfg.maxMB} MB`}</span>`}
+      </div>`;
+  }
+
+  function bindVideos(root, p) {
+    const list = $('#modList', root);
+    list.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-vact]'); if (!b) return;
+      const box = b.closest('.vid-box'); const k = box.dataset.k;
+      const m = p.modules.find((x) => x._k === k); if (!m) return;
+      const act = b.dataset.vact;
+      if (act === 'upload' || act === 'replace') {
+        if (act === 'replace' && (!cms.upCfg || cms.upCfg.mode === 'none')) { m.video = null; cms.linkOpen[k] = true; cms.dirty = true; renderCms(); return; }
+        pickFile(p.id, m);
+      }
+      if (act === 'remove') { m.video = null; cms.dirty = true; renderCms(); }
+      if (act === 'openlink') { cms.linkOpen[k] = true; renderCms(); const inp = root.querySelector(`.vid-box[data-k="${k}"] [data-vlink]`); if (inp) inp.focus(); }
+      if (act === 'closelink') { delete cms.linkOpen[k]; renderCms(); }
+      if (act === 'addlink') addLink(box, m);
+      if (act === 'cancel') { const up = cms.uploads[k]; if (up) up.abort(); }
+    });
+    list.addEventListener('keydown', (e) => {
+      if (e.target.matches('[data-vlink]') && e.key === 'Enter') {
+        e.preventDefault(); const box = e.target.closest('.vid-box'); const m = p.modules.find((x) => x._k === box.dataset.k); if (m) addLink(box, m);
+      }
+    });
+  }
+
+  function parseLink(raw) {
+    let u; try { u = new URL(raw.trim()); } catch { return null; }
+    const host = u.hostname.replace(/^(www|m)\./, '');
+    let id = null;
+    if (host === 'youtu.be') id = u.pathname.slice(1).split('/')[0];
+    else if (host === 'youtube.com') id = u.pathname === '/watch' ? u.searchParams.get('v') : (u.pathname.match(/^\/(embed|shorts|live)\/([\w-]+)/) || [])[2];
+    if (id && /^[\w-]{11}$/.test(id)) return { kind: 'youtube', id, url: 'https://www.youtube.com/watch?v=' + id };
+    if (host === 'vimeo.com' || host === 'player.vimeo.com') { const mm = u.pathname.match(/(?:^|\/)(\d{6,12})(?:\/|$)/); if (mm) return { kind: 'vimeo', id: mm[1], url: 'https://vimeo.com/' + mm[1] }; }
+    return null;
+  }
+  function addLink(box, m) {
+    const inp = box.querySelector('[data-vlink]'); const v = parseLink(inp.value);
+    if (!v) { S().toast('Paste a YouTube or Vimeo link'); inp.focus(); return; }
+    m.video = v; delete cms.linkOpen[m._k]; cms.dirty = true; renderCms();
+  }
+
+  function pickFile(pathId, m) {
+    const cfg = cms.upCfg;
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = cfg.types.join(',') + ',.mp4,.webm,.mov,.m4v';
+    input.addEventListener('change', () => { const f = input.files[0]; if (f) startUpload(pathId, m, f); });
+    input.click();
+  }
+
+  function setUpProgress(k, pct) {
+    const up = cms.uploads[k]; if (!up) return; up.pct = Math.max(0, Math.min(100, Math.round(pct)));
+    const box = document.querySelector(`.vid-box[data-k="${k}"]`); if (!box) return;
+    const n = box.querySelector('[data-pct]'); const bar = box.querySelector('[data-bar]');
+    if (n) n.textContent = up.pct; if (bar) bar.style.width = up.pct + '%';
+  }
+
+  async function startUpload(pathId, m, file) {
+    const cfg = cms.upCfg;
+    const type = file.type || ({ mov: 'video/quicktime', mp4: 'video/mp4', webm: 'video/webm', m4v: 'video/x-m4v' })[(file.name.split('.').pop() || '').toLowerCase()] || '';
+    if (!cfg.types.includes(type)) { S().toast('Upload an MP4, WebM or MOV video'); return; }
+    if (file.size > cfg.maxMB * 1048576) { S().toast(`That video is ${fmtSize(file.size)}. The limit is ${cfg.maxMB} MB.`); return; }
+    const k = m._k;
+    const up = { name: file.name, size: file.size, pct: 0, abort: () => {} };
+    cms.uploads[k] = up; renderCms();
+    try {
+      let result;
+      if (cfg.mode === 'blob') {
+        const { upload } = await import('/vendor/vercel-blob-client.js');
+        const ctrl = new AbortController(); up.abort = () => ctrl.abort();
+        const safe = file.name.toLowerCase().replace(/[^a-z0-9.\-]+/g, '-').replace(/^-+|-+$/g, '').slice(-80) || 'video';
+        const blob = await upload(`module-videos/${pathId}-${safe}`, file, {
+          access: 'public', handleUploadUrl: '/api/admin/uploads/blob', contentType: type,
+          multipart: file.size > 20 * 1048576, abortSignal: ctrl.signal,
+          onUploadProgress: (ev) => setUpProgress(k, ev.percentage),
+        });
+        result = { url: blob.url, size: file.size };
+      } else {
+        result = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest(); up.abort = () => xhr.abort();
+          xhr.open('POST', '/api/admin/uploads/local'); xhr.setRequestHeader('Content-Type', type);
+          xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setUpProgress(k, (ev.loaded / ev.total) * 100); };
+          xhr.onload = () => { let b = {}; try { b = JSON.parse(xhr.responseText); } catch (e) {} if (xhr.status >= 200 && xhr.status < 300) resolve(b); else reject(new Error(b.error || 'Upload failed.')); };
+          xhr.onerror = () => reject(new Error('Upload failed. Check your connection.'));
+          xhr.onabort = () => reject(Object.assign(new Error('Upload cancelled'), { name: 'AbortError' }));
+          xhr.send(file);
+        });
+      }
+      m.video = { kind: 'file', url: result.url, name: file.name.slice(0, 120), size: result.size || file.size };
+      delete cms.uploads[k]; cms.dirty = true;
+      if (cms.draft && cms.draft.modules.includes(m)) renderCms();
+      S().toast('Video uploaded. Save changes to publish it.');
+    } catch (e) {
+      delete cms.uploads[k];
+      if (cms.draft && cms.draft.modules.includes(m)) renderCms();
+      S().toast(e.name === 'AbortError' || /abort/i.test(e.message) ? 'Upload cancelled' : e.message);
+    }
+  }
+
   function guard(next) {
-    if (next !== 'content' && cms.dirty && !$('#contentView').hidden) {
+    if (next !== 'content' && (cms.dirty || Object.keys(cms.uploads).length) && !$('#contentView').hidden) {
       S().toast('Save or discard your changes first');
       history.replaceState(null, '', '#content');
       return false;
     }
     return true;
   }
-  window.addEventListener('beforeunload', (e) => { if (cms.dirty) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', (e) => { if (cms.dirty || Object.keys(cms.uploads).length) { e.preventDefault(); e.returnValue = ''; } });
 
   window.AdminViews = { overview, content, guard };
 })();

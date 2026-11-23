@@ -4,7 +4,7 @@ Public website where students learn about SandBox and apply, plus a password-pro
 
 - `/` is the public site with the application form.
 - `/portal` is the student portal: students sign in to follow their application. Once accepted and given a path, the portal becomes a workspace for that path (its own colour, modules to tick off, tools and a path-specific panel).
-- `/admin` is the admin portal. **Overview** shows applications per day, the status pipeline, role demand, path progress and items that need attention. **Paths & modules** is a CMS for each path's student-portal content. **Applicants** is the dashboard: sign in, see every applicant, search, filter by role and status, open an application, set its status (pending, shortlisted, accepted, rejected), add internal notes, delete, and export to CSV.
+- `/admin` is the admin portal. **Overview** shows applications per day, the status pipeline, role demand, path progress and items that need attention. **Paths & modules** is a CMS for each path's student-portal content, including a video per module. **Messages** is a chat inbox with every student who has a portal account. **Applicants** is the dashboard: sign in, see every applicant, search, filter by role and status, open an application, set its status (pending, shortlisted, accepted, rejected), add internal notes, delete, and export to CSV.
 
 ## Deploy on Vercel
 
@@ -13,6 +13,7 @@ Public website where students learn about SandBox and apply, plus a password-pro
 3. Open **Settings → Environment Variables** and add `ADMIN_EMAIL` and `ADMIN_PASSWORD` (a long password).
 4. Redeploy (**Deployments → ⋯ → Redeploy**), or push a commit.
 5. Visit `/admin` and sign in. Tables are created automatically on the first request.
+6. For module video uploads, open **Storage → Create → Blob**, choose **Public** access and connect it to this project. Vercel adds `BLOB_READ_WRITE_TOKEN`. Redeploy. Without it, admins can still add YouTube or Vimeo links.
 
 ## Run it locally
 
@@ -43,6 +44,9 @@ The admin account is created the first time the app gets a request. Locally, if 
 | `ADMIN_EMAIL` | `admin@sandbox.local` | First admin's email (only used when no admin exists yet) |
 | `ADMIN_PASSWORD` | random locally | First admin's password. Required on Vercel. |
 | `DB_PATH` | `./data/pglite` | Folder for the embedded local database |
+| `BLOB_READ_WRITE_TOKEN` | | Vercel Blob token for module video uploads. Added by Vercel when you connect a Blob store. |
+| `VIDEO_MAX_MB` | `500` | Largest video an admin can upload |
+| `UPLOAD_DIR` | `./data/uploads` | Where videos go locally when there's no Blob token |
 | `PORT` | `3000` | Local port |
 
 ## Project layout
@@ -68,3 +72,15 @@ Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four 
 - Students create a password on the application form, or later at `/portal` → **Set up my account** using their email and reference number.
 - Admins open an applicant and choose an **Assigned path**. When the application is **accepted** and has a path, the student's portal switches to that path.
 - Path content (name, accent colour, mission, modules, side panel and toolkit) is stored in the database and edited in the admin portal under **Paths & modules**. Saving updates every student's portal straight away. `lib/paths.js` holds the defaults used to seed each path and for **Reset to defaults**.
+
+## Module videos
+
+- In **Paths & modules**, each module has a **Video** field. Admins can **Upload video** (MP4, WebM or MOV) or **Paste a link** to YouTube or Vimeo, then **Save changes**. Students see a **Watch video** button on that module in their portal.
+- On Vercel, uploads go straight from the admin's browser to Vercel Blob, so large files don't hit the serverless request limit. Locally, they're saved in `./data/uploads`.
+- Blob files are public but have unguessable addresses. When a video is removed or replaced and the path is saved, the old file is deleted.
+- `public/vendor/vercel-blob-client.js` is the `@vercel/blob` upload client bundled for the browser (`npx esbuild` of `@vercel/blob/client`'s `upload`).
+
+## Messages
+
+- Students open **Messages** in the portal to chat with the SandBox team. Admins answer under **Messages** in the admin portal, or from an applicant's **Message** button.
+- The Messages tab shows how many student messages are unread. Both sides check for new messages every few seconds while the chat is open.
