@@ -103,4 +103,11 @@ Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four 
 ## Projects and the virtual office
 
 - Admins create projects under **Projects**: name, client, description, a meeting room link and a project files link, then add accepted students with a role and an optional team lead.
-- Students on a project get a **Virtual office** in their portal with the project details, a **Join meeting room** button and a desk card for each teammate (name, role, path and email). Cubit announces new projects.
+- Every accepted student gets an interactive **virtual office**: an isometric office floor where their character (dressed for their path: headphones for FE, hoodie for BE, beret for UI/UX, tie and clipboard for PM, magnifier for QA, hard hat for DevOps; team leads wear a star) walks between five rooms:
+  - **Meeting room**: join the project's video call and open project files.
+  - **Idea room**: pin ideas for the team and vote on them.
+  - **Coffee room**: casual team chat (messages clear after 7 days). Messages pop up as speech bubbles.
+  - **My office**: the student's own desk with their next module and any returned work.
+  - **Department**: one desk cluster per path; students sit with people on their path.
+- Teammates and people on the same path show up live in the room they're in (presence is a heartbeat every 25 seconds; the map refreshes every 6 seconds). Offline teammates doze at their desks. Students can react with emoji that everyone sees.
+- The idea board and coffee chat belong to the student's project, or to their department when they aren't on a project yet. Code: `lib/office.js` and `public/portal/office.js`.
