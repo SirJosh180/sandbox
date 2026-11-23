@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800;900&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/portal/office.css">
 <style>
 /* Portal: the path's accent colour (--accent) themes the whole dashboard. */
 :root{--accent:var(--sand);--accent-ink:var(--ink)}
@@ -196,20 +197,6 @@ main{padding-block:2.5rem 5rem}
 .office-desc{color:#c3c8d0;margin-top:.8rem;max-width:70ch}
 .office-you{margin-top:.6rem;font-size:.9rem;color:var(--muted)}
 .office-you b{color:var(--accent)}
-.desks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem;margin-top:1.2rem}
-.desk{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.15rem;padding:1rem .6rem 0;min-height:200px;border:1px solid var(--line);border-radius:16px;background:var(--ink);min-width:0}
-.desk.is-you{border-color:color-mix(in srgb,var(--ma) 60%,var(--line))}
-.desk-top{position:relative;margin-bottom:.45rem}
-@media (max-width:420px){.desks{grid-template-columns:1fr 1fr}.desk{min-height:180px}}
-.desk-av{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:1.1rem;color:var(--ink);background:var(--ma);box-shadow:0 0 0 4px color-mix(in srgb,var(--ma) 25%,transparent)}
-.desk-lead{position:absolute;right:-8px;top:-6px;font-size:1rem}
-.desk-name{font-weight:700;font-size:.95rem;overflow-wrap:anywhere}
-.desk-name .you{font-family:var(--f-mono);font-size:.65rem;font-weight:500;color:var(--ink);background:var(--ma);padding:.05rem .35rem;border-radius:5px;vertical-align:2px}
-.desk-role{font-size:.82rem;color:var(--ma)}
-.desk-path{font-family:var(--f-mono);font-size:.68rem;color:var(--muted)}
-.desk-mail{font-size:.72rem;color:var(--muted);margin:.35rem 0 .7rem;overflow-wrap:anywhere;text-decoration:none}
-.desk-mail:hover{color:var(--cream)}
-.desk-table{margin-top:auto;align-self:stretch;height:26px;border-radius:8px 8px 0 0;background:color-mix(in srgb,var(--ma) 22%,var(--ink-3));display:grid;place-items:center;font-size:.9rem}
 #office.flash .office,#office.flash.office{animation:mod-flash 1.6s ease}
 /* Cubit buddy */
 .buddy .cubit-btn{width:96px}
@@ -287,6 +274,7 @@ main{padding-block:2.5rem 5rem}
 
 <script src="/cubit/cubit.js"></script>
 <script src="/portal/cubit-buddy.js"></script>
+<script src="/portal/office.js"></script>
 <script>
 (function(){
 const ROLE_NAMES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
@@ -308,7 +296,7 @@ function setAccent(path){
 }
 
 // ---------- auth ----------
-function showAuth(){if(window.CubitBuddy)CubitBuddy.hide();setAccent(null);$("#dashView").hidden=true;$("#who").hidden=true;$("#authView").hidden=false;drawCubits($("#authView"));}
+function showAuth(){if(window.CubitBuddy)CubitBuddy.hide();if(window.VOffice)VOffice.unmount();setAccent(null);$("#dashView").hidden=true;$("#who").hidden=true;$("#authView").hidden=false;drawCubits($("#authView"));}
 function tab(which){
   const setup=which==="setup";
   $("#tabIn").setAttribute("aria-selected",!setup);$("#tabSetup").setAttribute("aria-selected",setup);
@@ -331,7 +319,7 @@ $("#setupForm").addEventListener("submit",async e=>{
   try{await api("/api/student/claim",{method:"POST",body:JSON.stringify({email,ref,password})});$("#suPass").value="";toast("Account created");load();}
   catch(err){$("#suErr").textContent=err.message;}
 });
-$("#logoutBtn").onclick=async()=>{stopChat();chat.msgs=[];chat.lastId=0;await api("/api/student/logout",{method:"POST"}).catch(()=>{});showAuth();};
+$("#logoutBtn").onclick=async()=>{stopChat();if(window.VOffice)VOffice.unmount();chat.msgs=[];chat.lastId=0;await api("/api/student/logout",{method:"POST"}).catch(()=>{});showAuth();};
 
 // ---------- dashboard ----------
 let state=null;
@@ -349,7 +337,7 @@ async function refreshMe(){
   if(!state)return;
   let next;try{next=await api("/api/student/me");}catch(err){if(err.status===401){clearInterval(load.t);showAuth();}return;}
   if(sig(next)===sig(state))return;
-  const busy=document.querySelector(".sub-form")||document.querySelector(".player:not([hidden])");
+  const busy=document.querySelector(".sub-form")||document.querySelector(".player:not([hidden])")||(document.activeElement&&document.activeElement.closest&&document.activeElement.closest(".vo-form"));
   state=next;
   if(busy){if(window.CubitBuddy)CubitBuddy.setContext({first:state.application?state.application.firstName:"",application:state.application,path:state.path,progress:state.progress,submissions:state.submissions||{},projects:state.projects||[],studentId:state.studentId});}
   else render();
@@ -509,28 +497,26 @@ document.addEventListener("submit",async e=>{
 });
 
 // ---------- virtual office ----------
-const initials=n=>String(n||"?").split(/[\s@.]+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
 function officeHtml(){
-  const ps=state.projects||[];
-  if(!ps.length)return `<section class="panel office empty-office" id="office"><h2>🏢 Virtual office</h2><div class="office-wait"><div class="cubit-sm" data-cubit="hmm"></div><p class="muted">No project yet. When the team puts you on a project, your teammates and meeting room show up here.</p></div></section>`;
-  return `<section class="office-wrap" id="office">${ps.map(p=>{
-    const me=p.members.find(x=>x.studentId===state.studentId);
-    return `<div class="panel office${p.status==="completed"?" is-completed":""}">
-      <div class="office-head"><div><span class="label">🏢 Virtual office${p.status==="completed"?" · completed":""}</span><h2 class="office-name">${esc(p.name)}</h2>
-        ${p.client?`<div class="office-client">for ${esc(p.client)}</div>`:""}</div>
-        <div class="office-links">${p.meetingUrl?`<a class="btn btn-accent btn-sm" href="${esc(p.meetingUrl)}" target="_blank" rel="noopener noreferrer">🎧 Join meeting room</a>`:""}${p.repoUrl?`<a class="btn btn-ghost btn-sm" href="${esc(p.repoUrl)}" target="_blank" rel="noopener noreferrer">📁 Project files</a>`:""}</div></div>
-      ${p.description?`<p class="office-desc">${esc(p.description)}</p>`:""}
-      ${me&&me.role?`<p class="office-you">Your role: <b>${esc(me.role)}</b>${me.isLead?" · ⭐ team lead":""}</p>`:""}
-      <div class="desks">${p.members.map(m=>`<div class="desk${m.studentId===state.studentId?" is-you":""}" style="--ma:${esc(m.accent||"var(--sand)")}">
-        <div class="desk-top"><span class="desk-av">${esc(initials(m.name))}</span>${m.isLead?`<span class="desk-lead" title="Team lead">⭐</span>`:""}</div>
-        <div class="desk-name">${esc(m.name)}${m.studentId===state.studentId?` <span class="you">you</span>`:""}</div>
-        <div class="desk-role">${esc(m.role||m.pathName||"Teammate")}</div>
-        ${m.role&&m.pathName&&m.role!==m.pathName?`<div class="desk-path">${esc(m.pathName)}</div>`:""}
-        ${m.studentId!==state.studentId?`<a class="desk-mail" href="mailto:${esc(m.email)}">✉️ ${esc(m.email)}</a>`:""}
-        <div class="desk-table" aria-hidden="true"><span>💻</span></div></div>`).join("")}</div>
-    </div>`;}).join("")}</section>`;
+  if(!state.path)return `<section class="panel office empty-office" id="office"><h2>🏢 Virtual office</h2><div class="office-wait"><div class="cubit-sm" data-cubit="hmm"></div><p class="muted">Your office opens once the team sets your path. Then you can walk around, meet your teammates and grab a coffee.</p></div></section>`;
+  const ps=state.projects||[];const p=ps.find(x=>x.status==="active")||ps[0];
+  const me=p&&p.members.find(x=>x.studentId===state.studentId);
+  return `<section class="panel office${p&&p.status==="completed"?" is-completed":""}" id="office">
+    <div class="office-head"><div><span class="label">🏢 Virtual office${p?(p.status==="completed"?" · completed project":" · your project"):""}</span><h2 class="office-name">${p?esc(p.name):"SandBox HQ"}</h2>
+      ${p&&p.client?`<div class="office-client">for ${esc(p.client)}</div>`:""}</div>
+      ${me&&me.role?`<p class="office-you">Your role: <b>${esc(me.role)}</b>${me.isLead?" · ⭐ team lead":""}</p>`:""}</div>
+    ${p&&p.description?`<p class="office-desc">${esc(p.description)}</p>`:!p?`<p class="office-desc">You’re not on a project yet, but the office is open. Walk around, meet people on your path and pin ideas. Your team shows up here once you’re on a project.</p>`:""}
+    <div id="voMount"></div></section>`;
 }
-function bindOffice(){}
+function deskInfo(){
+  const p=state.path;if(!p)return null;
+  const subs=state.submissions||{},done=new Set(state.progress);
+  const returned=p.modules.find(m=>subs[m.id]&&subs[m.id].status==="returned");
+  const next=p.modules.find(m=>!done.has(m.id)&&!subs[m.id]);
+  const waiting=Object.values(subs).filter(s=>s.status==="submitted").length;
+  return {returned:returned&&{id:returned.id,title:returned.title},next:next&&{id:next.id,title:next.title},waiting};
+}
+function bindOffice(){const m=$("#voMount");if(window.VOffice){if(m)VOffice.mount(m,{desk:deskInfo});else VOffice.unmount();}}
 function showOffice(){const o=$("#office");if(!o)return;o.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});o.classList.remove("flash");void o.offsetWidth;o.classList.add("flash");}
 
 // ---------- actions Cubit can take ----------
