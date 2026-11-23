@@ -3,6 +3,7 @@
 Public website where students learn about SandBox and apply, plus a password-protected admin dashboard for reviewing applicants.
 
 - `/` is the public site with the application form.
+- `/portal` is the student portal: students sign in to follow their application. Once accepted and given a path, the portal becomes a workspace for that path (its own colour, modules to tick off, tools and a path-specific panel).
 - `/admin` is the admin dashboard: sign in, see every applicant, search, filter by role and status, open an application, set its status (pending, shortlisted, accepted, rejected), add internal notes, delete, and export to CSV.
 
 ## Deploy on Vercel
@@ -61,3 +62,9 @@ The admin account is created the first time the app gets a request. Locally, if 
 ## Cubit, the helper buddy
 
 Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four moods (`hello`, `build`, `hmm`, `oops`) and runs the floating helper on the public site, which greets visitors, cheers on form progress, gives tips, and reacts to form errors. Standalone animated icons for each mood are in `public/cubit/cubit-<mood>.svg` for use elsewhere (they look best on a light background).
+
+## Student portal and paths
+
+- Students create a password on the application form, or later at `/portal` → **Set up my account** using their email and reference number.
+- Admins open an applicant and choose an **Assigned path**. When the application is **accepted** and has a path, the student's portal switches to that path.
+- Paths live in `lib/paths.js`: name, accent colour, mission, tools, the side panel (rituals, checklist or pipeline) and the modules. Edit that file to change the curriculum. Keep module ids stable once students start ticking them off.

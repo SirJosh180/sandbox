@@ -217,7 +217,7 @@ function render(){
     <td><div>${esc(a.school)}</div><div class="sub">${esc(a.course)} · ${esc(a.year)}</div></td>
     <td>${a.roles.map(r=>`<span class="rtag" title="${esc(ROLES[r])}">${SHORT[r]}</span>`).join("")}</td>
     <td>${esc(a.level)}</td>
-    <td><span class="status"><span class="dot ${a.status}"></span>${a.status}</span></td>
+    <td><span class="status"><span class="dot ${a.status}"></span>${a.status}</span>${a.assignedPath?`<div class="sub" style="margin-top:.35rem">path: ${esc(ROLES[a.assignedPath])}</div>`:""}</td>
     <td class="ref">${esc(a.ref)}</td>
     <td class="date">${fmtDate(a.createdAt)}</td></tr>`).join("");
   const empty=$("#empty");
@@ -246,6 +246,9 @@ async function openDrawer(id){
       <button class="x" type="button" id="dClose" aria-label="Close">×</button></header>
     <div class="content">
       <div><span class="label">Status</span><div class="status-pick" id="dStatus" style="margin-top:.6rem">${STATUSES.map(s=>`<button type="button" data-s="${s}" aria-pressed="${a.status===s}"><span class="dot ${s}"></span>${s}</button>`).join("")}</div></div>
+      <div class="field"><label for="dPath">Assigned path</label>
+        <select id="dPath"><option value="">Not assigned yet</option>${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${a.assignedPath===k?" selected":""}>${esc(v)}${a.roles.includes(k)?" (chosen by student)":""}</option>`).join("")}</select>
+        <span class="hint">The path sets the modules and workspace the student sees in their portal once they're accepted.${a.hasAccount?"":" This student hasn't set up a portal account yet."}</span></div>
       <dl class="kv">
         <dt>Email</dt><dd><span id="dEmail">${esc(a.email)}</span> <button class="btn btn-ghost btn-sm" type="button" id="copyEmail" style="padding:.2rem .55rem;font-size:.75rem;margin-left:.3rem">Copy</button></dd>
         <dt>School</dt><dd>${esc(a.school)}</dd>
@@ -268,6 +271,11 @@ async function openDrawer(id){
     try{const u=await api("/api/admin/applications/"+a.id,{method:"PATCH",body:JSON.stringify({status:b.dataset.s})});
       a.status=u.status;$("#dStatus").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===u.status));toast("Marked as "+u.status);load();}
     catch(err){toast(err.message);}};
+  $("#dPath").onchange=async e=>{
+    try{const u=await api("/api/admin/applications/"+a.id,{method:"PATCH",body:JSON.stringify({assignedPath:e.target.value||null})});a.assignedPath=u.assignedPath;
+      toast(u.assignedPath?`Path set to ${ROLES[u.assignedPath]}`+(u.status==="accepted"?"":". Mark them accepted so they can see it."):"Path cleared");load();}
+    catch(err){toast(err.message);}
+  };
   $("#saveNotes").onclick=async()=>{try{await api("/api/admin/applications/"+a.id,{method:"PATCH",body:JSON.stringify({notes:$("#dNotes").value})});$("#notesSaved").textContent="saved";setTimeout(()=>$("#notesSaved").textContent="",2000);}catch(err){toast(err.message);}};
   $("#copyEmail").onclick=async()=>{try{await navigator.clipboard.writeText(a.email);toast("Email copied");}catch{const r=document.createRange();r.selectNodeContents($("#dEmail"));const s=getSelection();s.removeAllRanges();s.addRange(r);}};
   $("#delBtn").onclick=()=>{
