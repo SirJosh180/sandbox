@@ -21,10 +21,14 @@
   async function refreshBadge() {
     const tab = document.querySelector('#nav a[data-view="messages"]'); if (!tab || $('#nav').hidden) return;
     try {
-      const { unread } = await S().api('/api/admin/unread');
-      let b = tab.querySelector('.nav-badge');
-      if (unread) { if (!b) { b = document.createElement('span'); b.className = 'nav-badge'; tab.appendChild(b); } b.textContent = unread > 99 ? '99+' : unread; b.setAttribute('aria-label', unread + ' unread'); }
-      else if (b) b.remove();
+      const { unread, toReview } = await S().api('/api/admin/unread');
+      const set = (t, n, what) => {
+        if (!t) return; let b = t.querySelector('.nav-badge');
+        if (n) { if (!b) { b = document.createElement('span'); b.className = 'nav-badge'; t.appendChild(b); } b.textContent = n > 99 ? '99+' : n; b.setAttribute('aria-label', n + ' ' + what); }
+        else if (b) b.remove();
+      };
+      set(tab, unread, 'unread');
+      set(document.querySelector('#nav a[data-view="reviews"]'), toReview, 'to review');
     } catch (e) { /* signed out */ }
   }
   setInterval(() => { if (!document.hidden) refreshBadge(); }, 30000);

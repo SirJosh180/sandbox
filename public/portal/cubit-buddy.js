@@ -7,13 +7,27 @@
   'use strict';
   if (!window.Cubit) return;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const local = {
+    get(k) { try { return JSON.parse(localStorage.getItem('sbx-buddy-' + k) || 'null'); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem('sbx-buddy-' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+  };
   const store = {
     get(k) { try { return sessionStorage.getItem('sbx-buddy-' + k); } catch (e) { return null; } },
     set(k, v) { try { sessionStorage.setItem('sbx-buddy-' + k, v); } catch (e) { /* private mode */ } },
   };
   const P = () => window.Portal || {};
 
-  const ctx = { ready: false, first: '', app: null, path: null, progress: [], unread: 0, lastMsg: null, chatOpen: false };
+  const ctx = { ready: false, first: '', app: null, path: null, progress: [], submissions: {}, projects: [], studentId: null, unread: 0, lastMsg: null, chatOpen: false };
+  // news (grades, returns, new projects) stays in the badge until the student opens Cubit
+  const newsKey = () => 'seen-' + (ctx.studentId || 'x');
+  const seenNews = () => new Set(local.get(newsKey()) || []);
+  function newsKeys() {
+    const keys = [];
+    Object.values(ctx.submissions).forEach((sb) => { if (sb.status !== 'submitted' && sb.reviewedAt) keys.push(`s${sb.id}:${sb.status}:${sb.reviewedAt}`); });
+    ctx.projects.forEach((p) => keys.push(`p${p.id}`));
+    return keys;
+  }
+  function markNewsSeen() { local.set(newsKey(), [...new Set([...(local.get(newsKey()) || []), ...newsKeys()])].slice(-200)); }
   let mood = null; let open = false; let items = []; let emojiTimer = null; let emojiIdx = 0;
 
   const wrap = document.createElement('div');
@@ -52,13 +66,20 @@
     if (!a) {
       out.push({ emoji: '📝', kind: 'task', text: 'You haven’t applied yet', action: 'Apply now', run: () => { location.href = '/#apply'; } });
     } else if (p) {
+      const seen = seenNews();
+      const subs = ctx.submissions;
+      const title = (id) => (p.modules.find((m) => m.id === id) || {}).title || 'A module';
+      Object.values(subs).filter((sb) => sb.status === 'returned').forEach((sb) => out.push({ emoji: '🔁', kind: 'task', text: `“${title(sb.moduleId)}” was returned with a comment`, sub: sb.feedback.slice(0, 90) + (sb.feedback.length > 90 ? '…' : ''), action: 'Fix it', run: () => P().showModule && P().showModule(sb.moduleId) }));
+      Object.values(subs).filter((sb) => sb.status === 'graded' && !seen.has(`s${sb.id}:graded:${sb.reviewedAt}`)).forEach((sb) => out.push({ emoji: sb.score >= 90 ? '🏆' : '🏅', kind: 'news', text: `“${title(sb.moduleId)}” graded ${sb.score}/100`, sub: sb.feedback ? sb.feedback.slice(0, 90) + (sb.feedback.length > 90 ? '…' : '') : 'Nice work!', action: 'See it', run: () => P().showModule && P().showModule(sb.moduleId) }));
+      const waiting = Object.values(subs).filter((sb) => sb.status === 'submitted').length;
+      if (waiting) out.push({ emoji: '⏳', kind: 'info', text: `${waiting} output${waiting === 1 ? '' : 's'} waiting for review`, sub: 'Cubit will tell you when the team grades it.' });
       const done = new Set(ctx.progress);
-      const left = p.modules.filter((m) => !done.has(m.id));
-      if (!left.length) out.push({ emoji: '🎉', kind: 'done', text: `All ${p.modules.length} modules done. Amazing work!`, sub: 'Show your team what you built at demo day.' });
+      const left = p.modules.filter((m) => !done.has(m.id) && !subs[m.id]);
+      if (!left.length && p.modules.every((m) => done.has(m.id))) out.push({ emoji: '🎉', kind: 'done', text: `All ${p.modules.length} modules done. Amazing work!`, sub: 'Show your team what you built at demo day.' });
       else {
         const next = left[0];
-        out.push({ emoji: '📚', kind: 'task', text: `Next up: ${next.title}`, sub: `Week ${next.week} · deliverable: ${next.deliverable}`, action: 'Show me', run: () => P().showModule && P().showModule(next.id) });
-        if (next.video) out.push({ emoji: '🎬', kind: 'task', text: 'There’s a video for this module', action: 'Watch', run: () => P().playModule && P().playModule(next.id) });
+        out.push({ emoji: '📚', kind: 'task', text: `Next up: ${next.title}`, sub: `Week ${next.week} · submit: ${next.deliverable}`, action: 'Show me', run: () => P().showModule && P().showModule(next.id) });
+        if (next.video) out.push({ emoji: '🎬', kind: 'info', text: 'There’s a video for this module', action: 'Watch', run: () => P().playModule && P().playModule(next.id) });
         if (left.length > 1) out.push({ emoji: '🗂️', kind: 'info', text: `${left.length - 1} more module${left.length - 1 === 1 ? '' : 's'} after that`, sub: `${p.modules.length - left.length} of ${p.modules.length} done so far` });
       }
     } else {
@@ -67,6 +88,15 @@
         accepted: ['🚀', 'You’re accepted! Your path is coming', 'Your modules appear here once the team sets your path.'],
         rejected: ['💪', 'Not this cohort, but keep going', 'You can apply again for the next cohort.'] }[a.status];
       if (s) out.push({ emoji: s[0], kind: a.status === 'rejected' ? 'info' : 'status', text: s[1], sub: s[2], ...(a.status === 'rejected' ? { action: 'Apply again', run: () => { location.href = '/#apply'; } } : {}) });
+    }
+    if (a && a.status === 'accepted') {
+      const seen = seenNews();
+      ctx.projects.filter((pr) => pr.status === 'active').forEach((pr) => {
+        const mates = pr.members.filter((m) => m.studentId !== ctx.studentId).length;
+        out.push(seen.has(`p${pr.id}`)
+          ? { emoji: '🏢', kind: 'info', text: `Your team: ${pr.name}`, sub: `${mates} teammate${mates === 1 ? '' : 's'}${pr.meetingUrl ? ' · meeting room ready' : ''}`, action: 'Open office', run: () => P().showOffice && P().showOffice() }
+          : { emoji: '🏢', kind: 'news', text: `You’re on a project: ${pr.name}!`, sub: `Meet your ${mates} teammate${mates === 1 ? '' : 's'} in your virtual office.`, action: 'Open office', run: () => P().showOffice && P().showOffice() });
+      });
     }
     out.push({ emoji: '🙋', kind: 'help', text: 'Stuck or have a question?', action: 'Ask the team', run: () => P().openChat && P().openChat() });
     return out;
@@ -85,6 +115,7 @@
     const name = ctx.first ? `, ${ctx.first}` : '';
     if (ctx.unread) return [`Psst${name}! 👋`, 'The team sent you something.'];
     const tasks = items.filter((i) => i.kind === 'task').length;
+    if (items.some((i) => i.kind === 'news')) return [`Good news${name}! 🎉`, 'Here’s what’s new for you.'];
     if (tasks) return [`Hi${name}! 👋`, 'Here’s what’s next for you.'];
     if (items.some((i) => i.kind === 'done')) return [`Woohoo${name}! 🥳`, 'You’re all caught up.'];
     return [`Hi${name}! 👋`, 'Here’s where things stand.'];
@@ -95,7 +126,7 @@
     if (!ctx.ready) return;
     items = build();
     setMood(pickMood());
-    const count = ctx.unread + items.filter((i) => i.kind === 'task').length;
+    const count = ctx.unread + items.filter((i) => i.kind === 'task' || i.kind === 'news').length;
     badge.hidden = !count; badge.textContent = count > 9 ? '9+' : count;
     btn.setAttribute('aria-label', `Cubit, your helper. ${count ? count + ' notification' + (count === 1 ? '' : 's') : 'No new notifications'}. Open.`);
     // the little emoji above Cubit's head cycles through what's waiting
@@ -126,10 +157,13 @@
   function show(custom) {
     open = true; clearInterval(emojiTimer); emojiEl.classList.remove('on');
     renderBubble(custom);
+    if (!custom) pendingSeen = true;
     bubble.hidden = false; btn.setAttribute('aria-expanded', 'true');
     bubble.classList.remove('cubit-pop'); void bubble.offsetWidth; bubble.classList.add('cubit-pop');
   }
-  function close() { open = false; bubble.hidden = true; btn.setAttribute('aria-expanded', 'false'); refresh(); }
+  let pendingSeen = false;
+  // news counts as seen once the student has had the list open
+  function close() { if (pendingSeen) { pendingSeen = false; markNewsSeen(); } open = false; bubble.hidden = true; btn.setAttribute('aria-expanded', 'false'); refresh(); }
 
   // a quick burst of emoji when something new arrives
   function burst(list) {
@@ -150,10 +184,14 @@
   /* ---------- API for the portal page ---------- */
   window.CubitBuddy = {
     // called after the dashboard renders
-    setContext({ first, application, path, progress }) {
+    setContext({ first, application, path, progress, submissions, projects, studentId }) {
       const firstTime = !ctx.ready;
-      Object.assign(ctx, { ready: true, first: first || '', app: application, path, progress: [...(progress || [])] });
+      const before = new Set(items.filter((i) => i.kind === 'news' || i.kind === 'task').map((i) => i.text));
+      Object.assign(ctx, { ready: true, first: first || '', app: application, path, progress: [...(progress || [])], submissions: submissions || {}, projects: projects || [], studentId: studentId || ctx.studentId });
       refresh();
+      // something new arrived since the last update (a grade, a return, a project): pop up
+      const fresh = items.filter((i) => (i.kind === 'news' || (i.kind === 'task' && i.emoji === '🔁')) && !before.has(i.text));
+      if (!firstTime && fresh.length && !ctx.chatOpen) { show(); burst([...new Set(fresh.map((i) => i.emoji))].concat(['✨']).slice(0, 4)); }
       if (firstTime && !store.get('greeted')) {
         store.set('greeted', '1');
         setTimeout(() => { if (!open && !ctx.chatOpen) { show(); burst(items.filter((i) => i.kind !== 'help').map((i) => i.emoji).slice(0, 4)); } }, 900);
