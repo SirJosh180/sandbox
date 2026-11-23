@@ -102,6 +102,40 @@ main{padding-block:2.5rem 5rem}
 .timeline span{color:var(--muted);font-size:.88rem}
 .kv{font-size:.92rem}
 .muted{color:var(--muted)}
+
+/* module video */
+.watch{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;margin-top:.7rem;font-size:.82rem;font-weight:600;color:var(--accent);padding:.35rem .7rem;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:999px}
+.watch:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.watch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.watch .pl{width:0;height:0;border-left:7px solid currentColor;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+.player{margin-top:.8rem;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;border:1px solid var(--line)}
+.player video,.player iframe{width:100%;height:100%;display:block;border:0}
+
+/* chat */
+.msg-btn{position:relative}
+@media (max-width:640px){#whoEmail{display:none}}
+.badge{position:absolute;top:-6px;right:-6px;min-width:1.2rem;height:1.2rem;padding:0 .3rem;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-mono);font-size:.66rem;font-weight:700;display:grid;place-items:center}
+.scrim{position:fixed;inset:0;background:rgba(5,7,10,.55);z-index:70}
+.chatbox{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:80;background:var(--ink-2);border-left:1px solid var(--line);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.chatbox header{display:flex;align-items:center;gap:.8rem;padding:1rem 1.1rem;border-bottom:1px solid var(--line)}
+.chatbox header .t{flex:1}
+.chatbox header strong{font-family:var(--f-display);font-size:1.15rem;display:block}
+.chatbox header span{color:var(--muted);font-size:.8rem}
+.chatbox .x{all:unset;cursor:pointer;font-size:1.5rem;line-height:1;color:var(--muted);padding:.2rem .45rem;border-radius:6px}
+.chatbox .x:hover{color:var(--cream)}
+.chatbox .x:focus-visible{outline:2px solid var(--accent)}
+.chatbox .cubit-sm{width:44px;flex:none}
+.msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.3rem}
+.msg{max-width:82%;padding:.6rem .85rem;border-radius:14px;font-size:.93rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.them{align-self:flex-start;background:var(--ink-3);border-bottom-left-radius:4px}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.msg-meta{font-family:var(--f-mono);font-size:.66rem;color:var(--muted);margin:0 .2rem .45rem}
+.msg-meta.me{align-self:flex-end}
+.day-sep{align-self:center;font-family:var(--f-mono);font-size:.68rem;color:var(--muted);margin:.7rem 0 .3rem;text-transform:uppercase;letter-spacing:.1em}
+.chat-empty{margin:auto;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem}
+.chat-empty strong{font-family:var(--f-display);color:var(--cream);font-size:1.1rem}
+.composer{display:flex;flex-direction:row;gap:.5rem;padding:.75rem;border-top:1px solid var(--line);align-items:flex-end}
+.composer textarea{flex:1;width:auto;min-width:0;min-height:44px;max-height:150px;resize:none;padding:.65rem .8rem;font-size:.93rem}
 .toast{position:fixed;left:50%;bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--cream);color:var(--ink);font-weight:600;font-size:.9rem;padding:.7rem 1.1rem;border-radius:999px;z-index:100}
 </style>
 </head>
@@ -109,7 +143,7 @@ main{padding-block:2.5rem 5rem}
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="/"><svg aria-hidden="true" viewBox="0 0 120 140"><polygon points="60,88 110,60 60,32 10,60" fill="#1f2733"/><polygon points="10,60 60,88 60,138 10,110" fill="#f4cf82"/><polygon points="110,60 60,88 60,138 110,110" fill="#e3a94a"/><polygon points="60,36 78,26 60,16 42,26" fill="#a8f0d8"/><polygon points="42,26 60,36 60,52 42,42" fill="#5ee3bc"/><polygon points="78,26 60,36 60,52 78,42" fill="#2fbf93"/></svg><span class="wordmark">Sand<b>Box</b></span><span class="pill-tag" id="tag">Student portal</span></a>
-    <div class="who" id="who" hidden><span id="whoEmail"></span><button class="btn btn-ghost btn-sm" type="button" id="logoutBtn">Sign out</button></div>
+    <div class="who" id="who" hidden><span id="whoEmail"></span><button class="btn btn-ghost btn-sm msg-btn" type="button" id="msgBtn" aria-label="Messages">💬 Messages<span class="badge" id="msgBadge" hidden></span></button><button class="btn btn-ghost btn-sm" type="button" id="logoutBtn">Sign out</button></div>
   </div>
 </header>
 
@@ -146,6 +180,12 @@ main{padding-block:2.5rem 5rem}
 
   <section id="dashView" hidden></section>
 </main>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="chatbox" id="chatbox" hidden role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+  <header><div class="cubit-sm" data-cubit="hello"></div><div class="t"><strong id="chatTitle">SandBox team</strong><span>Questions about your application or path? Ask here.</span></div><button class="x" type="button" id="chatClose" aria-label="Close messages">×</button></header>
+  <div class="msgs" id="msgs" aria-live="polite"></div>
+  <form class="composer" id="composer"><textarea id="msgIn" rows="1" maxlength="2000" placeholder="Write a message…" aria-label="Message"></textarea><button class="btn btn-accent btn-sm" type="submit" style="height:44px">Send</button></form>
+</aside>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="/cubit/cubit.js"></script>
@@ -193,7 +233,7 @@ $("#setupForm").addEventListener("submit",async e=>{
   try{await api("/api/student/claim",{method:"POST",body:JSON.stringify({email,ref,password})});$("#suPass").value="";toast("Account created");load();}
   catch(err){$("#suErr").textContent=err.message;}
 });
-$("#logoutBtn").onclick=async()=>{await api("/api/student/logout",{method:"POST"}).catch(()=>{});showAuth();};
+$("#logoutBtn").onclick=async()=>{stopChat();chat.msgs=[];chat.lastId=0;await api("/api/student/logout",{method:"POST"}).catch(()=>{});showAuth();};
 
 // ---------- dashboard ----------
 let state=null;
@@ -202,6 +242,7 @@ async function load(){
   catch(err){if(err.status===401)return showAuth();toast(err.message);return;}
   $("#authView").hidden=true;$("#who").hidden=false;$("#whoEmail").textContent=state.email;
   render();
+  if(!chat.timer)startChat();
 }
 
 function appSummary(a){
@@ -265,7 +306,7 @@ function pathView(a,p){
         <div class="prog"><div class="bar"><i id="bar" style="width:${pct}%"></i></div><span id="pctNum">${pct}%</span></div>
         <ol class="modules">${p.modules.map(m=>`<li class="module${done.has(m.id)?" is-done":""}" data-id="${m.id}">
           <button type="button" class="tick" aria-pressed="${done.has(m.id)}" aria-label="Mark ${esc(m.title)} as done">✓</button>
-          <div><h3>${esc(m.title)}</h3><p>${esc(m.desc)}</p><div class="deliv">deliverable › ${esc(m.deliverable)}</div></div>
+          <div><h3>${esc(m.title)}</h3><p>${esc(m.desc)}</p><div class="deliv">deliverable › ${esc(m.deliverable)}</div>${m.video?`<button type="button" class="watch" aria-expanded="false"><span class="pl"></span>Watch video</button><div class="player" hidden></div>`:""}</div>
           <span class="wk">week ${m.week}</span></li>`).join("")}</ol></div>
       <div class="stack">
         ${wide?"":panelHtml}
@@ -275,7 +316,21 @@ function pathView(a,p){
     </div>`;
 }
 
+function playerHtml(v,title){
+  if(v.kind==="youtube")return `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.id)}?rel=0&autoplay=1" title="${esc(title)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`;
+  if(v.kind==="vimeo")return `<iframe src="https://player.vimeo.com/video/${encodeURIComponent(v.id)}?autoplay=1" title="${esc(title)}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+  return `<video src="${esc(v.url)}" controls autoplay playsinline preload="metadata" aria-label="${esc(title)}"></video>`;
+}
 function bindModules(){
+  document.querySelectorAll(".module .watch").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const li=btn.closest(".module");const m=state.path.modules.find(x=>x.id===li.dataset.id);const pl=li.querySelector(".player");
+      const open=pl.hidden;
+      if(open){pl.innerHTML=playerHtml(m.video,m.title);pl.hidden=false;btn.lastChild.textContent="Hide video";}
+      else{pl.innerHTML="";pl.hidden=true;btn.lastChild.textContent="Watch video";}
+      btn.setAttribute("aria-expanded",open);
+    });
+  });
   document.querySelectorAll(".module .tick").forEach(btn=>{
     btn.addEventListener("click",async()=>{
       const li=btn.closest(".module");const id=li.dataset.id;const done=!li.classList.contains("is-done");
@@ -289,6 +344,68 @@ function bindModules(){
     });
   });
 }
+
+// ---------- messages ----------
+const chat={msgs:[],lastId:0,open:false,timer:null,sending:false,lastFocus:null};
+const hm=iso=>new Date(iso).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+function setBadge(n){const b=$("#msgBadge");b.hidden=!n;b.textContent=n>99?"99+":n;$("#msgBtn").setAttribute("aria-label",n?`Messages, ${n} unread`:"Messages");}
+function msgsHtml(list,prev){
+  let out="",lastDay=prev?new Date(prev.createdAt).toDateString():null;
+  for(const m of list){
+    const day=new Date(m.createdAt).toDateString();
+    if(day!==lastDay){out+=`<div class="day-sep">${new Date(m.createdAt).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}</div>`;lastDay=day;}
+    const me=m.from==="student";
+    out+=`<div class="msg ${me?"me":"them"}" data-id="${m.id}">${esc(m.body)}</div><div class="msg-meta ${me?"me":""}">${me?"":"SandBox team · "}${hm(m.createdAt)}</div>`;
+  }
+  return out;
+}
+function renderMsgs(fresh){
+  const box=$("#msgs");const near=box.scrollHeight-box.scrollTop-box.clientHeight<120;
+  if(!chat.msgs.length){box.innerHTML=`<div class="chat-empty"><div style="width:110px" data-cubit="hello"></div><strong>Say hi to the team</strong><span>Ask about your application, your path or a module. The SandBox team replies here.</span></div>`;drawCubits(box);return;}
+  if(fresh&&box.querySelector(".msg")){const prev=chat.msgs[chat.msgs.indexOf(fresh[0])-1];box.insertAdjacentHTML("beforeend",msgsHtml(fresh,prev));}
+  else box.innerHTML=msgsHtml(chat.msgs);
+  if(near||!fresh)box.scrollTop=box.scrollHeight;
+}
+function markSeen(){
+  const box=$("#msgs");box.querySelectorAll(".seen-mark").forEach(el=>el.remove());
+  const mine=[...box.querySelectorAll(".msg.me")].filter(el=>Number(el.dataset.id)<=(chat.seenUpTo||0));const last=mine[mine.length-1];
+  if(last&&last.nextElementSibling)last.nextElementSibling.insertAdjacentHTML("beforeend",'<span class="seen-mark"> · seen</span>');
+}
+async function pollMsgs(first){
+  try{
+    const r=await api(`/api/student/messages?after=${first?0:chat.lastId}${chat.open?"&read=1":""}`);
+    if(first)chat.msgs=r.messages;else chat.msgs.push(...r.messages.filter(m=>!chat.msgs.some(x=>x.id===m.id)));
+    if(chat.msgs.length)chat.lastId=chat.msgs[chat.msgs.length-1].id;
+    setBadge(chat.open?0:r.unread);
+    chat.seenUpTo=r.seenUpTo||0;
+    if(chat.open){if(first)renderMsgs();else if(r.messages.length)renderMsgs(r.messages);markSeen();}
+  }catch(err){if(err.status===401){stopChat();showAuth();}}
+}
+function startChat(){clearInterval(chat.timer);pollMsgs(true);chat.timer=setInterval(()=>{if(!document.hidden)pollMsgs(false);},chat.open?4000:30000);}
+function stopChat(){clearInterval(chat.timer);chat.timer=null;closeChat(true);}
+function openChat(){
+  chat.lastFocus=document.activeElement;chat.open=true;
+  $("#chatbox").hidden=false;$("#scrim").hidden=false;document.body.style.overflow="hidden";drawCubits($("#chatbox"));
+  renderMsgs();startChat();
+  if(matchMedia("(min-width:700px)").matches)$("#msgIn").focus();else $("#chatClose").focus();
+}
+function closeChat(silent){
+  if(!chat.open)return;chat.open=false;$("#chatbox").hidden=true;$("#scrim").hidden=true;document.body.style.overflow="";
+  if(!silent){startChat();if(chat.lastFocus&&document.contains(chat.lastFocus))chat.lastFocus.focus();}
+}
+$("#msgBtn").onclick=openChat;$("#chatClose").onclick=()=>closeChat();$("#scrim").onclick=()=>closeChat();
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&chat.open)closeChat();});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&chat.timer)pollMsgs(false);});
+const ta=$("#msgIn");
+ta.addEventListener("input",()=>{ta.style.height="auto";ta.style.height=Math.min(150,ta.scrollHeight)+"px";});
+ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("#composer").requestSubmit();}});
+$("#composer").addEventListener("submit",async e=>{
+  e.preventDefault();const body=ta.value.trim();if(!body||chat.sending)return;chat.sending=true;
+  try{const m=await api("/api/student/messages",{method:"POST",body:JSON.stringify({body})});ta.value="";ta.style.height="auto";
+    if(!chat.msgs.some(x=>x.id===m.id)){chat.msgs.push(m);renderMsgs(chat.msgs.length>1?[m]:null);}chat.lastId=Math.max(chat.lastId,m.id);$("#msgs").scrollTop=$("#msgs").scrollHeight;}
+  catch(err){toast(err.message);}
+  chat.sending=false;ta.focus();
+});
 
 load();
 })();
