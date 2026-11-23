@@ -37,6 +37,7 @@
       <li><a href="#how">How it works</a></li>
       <li><a href="#roles">Roles</a></li>
       <li><a href="#faq">FAQ</a></li>
+      <li><a href="/portal">Student portal</a></li>
     </ul>
     <a class="btn btn-primary" href="#apply">Apply now</a>
   </div>
@@ -196,6 +197,13 @@ devops      Faye     CI pipeline ✓
               <div class="field full" data-f="agree"><label class="check"><input type="checkbox" id="agree" name="agree"><span>I can commit to attending my team's weekly meeting and I agree that SandBox can contact me about this application.</span></label><div class="err"></div></div>
             </fieldset>
 
+            <fieldset>
+              <legend><span class="label">05</span> Student portal <span class="opt" style="font-family:var(--f-body);font-size:.85rem">(recommended)</span></legend>
+              <p class="full hint" style="margin-top:-.6rem">Create a password to follow your application and, once you're accepted, open your path's workspace in the student portal. You can also set it up later with your reference number.</p>
+              <div class="field" data-f="password"><label for="password">Password <span class="opt">(optional)</span></label><input id="password" type="password" autocomplete="new-password" placeholder="At least 8 characters"><div class="err"></div></div>
+              <div class="field" data-f="password2"><label for="password2">Confirm password</label><input id="password2" type="password" autocomplete="new-password"><div class="err"></div></div>
+            </fieldset>
+
             <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
             <div class="submit-row">
               <button class="btn btn-primary" type="submit">Submit application <span class="k">↵</span></button>
@@ -314,7 +322,9 @@ const RULES={
   hours:()=>$("#hours").value?"":"Tell us how many hours a week you can give.",
   portfolio:()=>{const v=$("#portfolio").value.trim();if(!v)return"";try{const u=new URL(v);return/^https?:$/.test(u.protocol)?"":"Use a link that starts with https://";}catch(e){return"Use a full link, like https://github.com/username";}},
   motivation:()=>{const n=mot.value.trim().length;if(!n)return"Tell us why you want to join.";return n<MIN?`Add a bit more detail: ${MIN-n} more characters to go.`:"";},
-  agree:()=>$("#agree").checked?"":"Please confirm you can attend weekly meetings."
+  agree:()=>$("#agree").checked?"":"Please confirm you can attend weekly meetings.",
+  password:()=>{const v=$("#password").value;return !v||v.length>=8?"":"Use at least 8 characters, or leave it empty to set it up later.";},
+  password2:()=>{const v=$("#password").value;if(!v)return"";return $("#password2").value===v?"":"The passwords don't match.";}
 };
 function setErr(k,msg){const f=form.querySelector(`[data-f="${k}"]`);if(!f)return;f.classList.toggle("invalid",!!msg);f.querySelector(".err").textContent=msg||"";}
 function flash(k,msg){setErr(k,msg);setTimeout(()=>{if(RULES[k]()==="")setErr(k,"")},2600);}
@@ -369,6 +379,7 @@ form.addEventListener("submit",async e=>{
   if(first){focusField(first);$("#formNote").textContent="Some fields need attention. They're marked in red.";return;}
   const d=data();
   d.website=$("#website").value;
+  if($("#password").value)d.password=$("#password").value;
   submitBtn.disabled=true;submitBtn.firstChild.textContent="Submitting… ";
   let res,body={};
   try{
@@ -402,6 +413,9 @@ form.addEventListener("submit",async e=>{
         <li>You're matched to a team based on your roles: ${esc(roleNames.join(", "))}.</li>
         <li>You get an invite to your team's kickoff meeting.</li>
       </ol></div>
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:center">${body.account==="created"||body.account==="existing"
+      ?`<a class="btn btn-primary" href="/portal">Open my student portal →</a><span class="note" style="color:var(--muted);font-size:.9rem">${body.account==="created"?"Your account is ready and you're signed in.":"Sign in with your existing password."}</span>`
+      :`<a class="btn btn-ghost" href="/portal#setup">Set up my student portal</a><span style="color:var(--muted);font-size:.9rem">Use your email and reference number.</span>`}</div>
   </div>`;
   const done=$("#done");done.scrollIntoView({behavior:"smooth",block:"start"});done.focus({preventScroll:true});
 });
