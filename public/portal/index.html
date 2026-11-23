@@ -114,6 +114,7 @@ main{padding-block:2.5rem 5rem}
 /* chat */
 .msg-btn{position:relative}
 @media (max-width:640px){#whoEmail{display:none}}
+@media (max-width:560px){.topbar .who{gap:.4rem}.msg-lbl{display:none}.topbar .pill-tag{display:none}.topbar .btn-sm{padding:.5rem .7rem}}
 .badge{position:absolute;top:-6px;right:-6px;min-width:1.2rem;height:1.2rem;padding:0 .3rem;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-mono);font-size:.66rem;font-weight:700;display:grid;place-items:center}
 .scrim{position:fixed;inset:0;background:rgba(5,7,10,.55);z-index:70}
 .chatbox{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:80;background:var(--ink-2);border-left:1px solid var(--line);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -136,6 +137,44 @@ main{padding-block:2.5rem 5rem}
 .chat-empty strong{font-family:var(--f-display);color:var(--cream);font-size:1.1rem}
 .composer{display:flex;flex-direction:row;gap:.5rem;padding:.75rem;border-top:1px solid var(--line);align-items:flex-end}
 .composer textarea{flex:1;width:auto;min-width:0;min-height:44px;max-height:150px;resize:none;padding:.65rem .8rem;font-size:.93rem}
+
+/* chat: emoji picker and Cubit's prompts */
+.emoji-btn{all:unset;cursor:pointer;flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);font-size:1.25rem}
+.emoji-btn:hover{border-color:var(--accent)}
+.emoji-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.emoji-pop{position:absolute;left:.75rem;bottom:calc(74px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(8,1fr);gap:.15rem;padding:.5rem;background:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px -14px rgba(0,0,0,.8);z-index:2;animation:cb-pop .2s ease}
+.emoji-pop button{all:unset;cursor:pointer;width:36px;height:36px;display:grid;place-items:center;border-radius:8px;font-size:1.3rem}
+.emoji-pop button:hover,.emoji-pop button:focus-visible{background:var(--ink-3);outline:none}
+@media (max-width:400px){.emoji-pop{grid-template-columns:repeat(6,1fr)}}
+.prompts{display:flex;flex-direction:column;gap:.4rem;margin-top:.8rem;width:100%;max-width:320px}
+.prompts-lbl{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.prompt{all:unset;cursor:pointer;text-align:left;font-size:.88rem;padding:.55rem .8rem;border:1px solid var(--line);border-radius:12px;color:var(--cream)}
+.prompt:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.prompt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.module.flash{animation:mod-flash 1.6s ease}
+@keyframes mod-flash{0%,60%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 70%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
+
+/* Cubit buddy */
+.buddy .cubit-btn{width:96px}
+.buddy-stage{position:relative}
+.buddy-badge{position:absolute;top:2px;right:2px;min-width:1.4rem;height:1.4rem;padding:0 .35rem;border-radius:99px;background:#ff6b5a;color:#fff;font-family:var(--f-mono);font-size:.72rem;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 3px var(--ink);pointer-events:none}
+.buddy-emoji{position:absolute;left:-10px;top:-8px;font-size:1.5rem;opacity:0;pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+.buddy-emoji.on{animation:buddy-emoji 2.6s ease both}
+@keyframes buddy-emoji{0%{opacity:0;transform:translateY(10px) scale(.4) rotate(-15deg)}12%{opacity:1;transform:translateY(-6px) scale(1.15) rotate(8deg)}22%{transform:translateY(0) scale(1) rotate(0)}85%{opacity:1;transform:translateY(-4px)}100%{opacity:0;transform:translateY(-14px) scale(.8)}}
+.buddy-burst{position:absolute;left:50%;top:10px;font-size:1.6rem;pointer-events:none;opacity:0;animation:buddy-burst 1.5s cubic-bezier(.2,.7,.3,1) both}
+@keyframes buddy-burst{0%{opacity:0;transform:translate(-50%,10px) scale(.3)}20%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-120px) scale(1.2) rotate(12deg)}}
+.buddy-bubble{width:min(340px,calc(100vw - 32px));padding-right:1rem}
+.buddy-bubble .cubit-title{padding-right:1.6rem}
+.buddy-list{list-style:none;margin:.7rem 0 0;padding:0;display:flex;flex-direction:column;gap:.45rem;max-height:min(52vh,420px);overflow-y:auto}
+.buddy-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.6rem;align-items:center;padding:.55rem .6rem;border-radius:12px;background:rgba(16,20,27,.06)}
+.buddy-item.k-msg{background:color-mix(in srgb,var(--accent) 28%,#fff)}
+.bi-emoji{font-size:1.35rem;width:1.8rem;text-align:center}
+.bi-body{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.bi-text{font-weight:600;font-size:.88rem;overflow-wrap:anywhere}
+.bi-sub{font-size:.78rem;color:#4a5361;overflow-wrap:anywhere}
+.buddy-item .cubit-action{white-space:nowrap}
+@media (max-width:520px){.buddy .cubit-btn{width:76px}}
+@media (prefers-reduced-motion:reduce){.buddy-emoji.on{animation:none;opacity:1}}
 .toast{position:fixed;left:50%;bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--cream);color:var(--ink);font-weight:600;font-size:.9rem;padding:.7rem 1.1rem;border-radius:999px;z-index:100}
 </style>
 </head>
@@ -143,7 +182,7 @@ main{padding-block:2.5rem 5rem}
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="/"><svg aria-hidden="true" viewBox="0 0 120 140"><polygon points="60,88 110,60 60,32 10,60" fill="#1f2733"/><polygon points="10,60 60,88 60,138 10,110" fill="#f4cf82"/><polygon points="110,60 60,88 60,138 110,110" fill="#e3a94a"/><polygon points="60,36 78,26 60,16 42,26" fill="#a8f0d8"/><polygon points="42,26 60,36 60,52 42,42" fill="#5ee3bc"/><polygon points="78,26 60,36 60,52 78,42" fill="#2fbf93"/></svg><span class="wordmark">Sand<b>Box</b></span><span class="pill-tag" id="tag">Student portal</span></a>
-    <div class="who" id="who" hidden><span id="whoEmail"></span><button class="btn btn-ghost btn-sm msg-btn" type="button" id="msgBtn" aria-label="Messages">💬 Messages<span class="badge" id="msgBadge" hidden></span></button><button class="btn btn-ghost btn-sm" type="button" id="logoutBtn">Sign out</button></div>
+    <div class="who" id="who" hidden><span id="whoEmail"></span><button class="btn btn-ghost btn-sm msg-btn" type="button" id="msgBtn" aria-label="Messages">💬<span class="msg-lbl"> Messages</span><span class="badge" id="msgBadge" hidden></span></button><button class="btn btn-ghost btn-sm" type="button" id="logoutBtn">Sign out</button></div>
   </div>
 </header>
 
@@ -184,11 +223,13 @@ main{padding-block:2.5rem 5rem}
 <aside class="chatbox" id="chatbox" hidden role="dialog" aria-modal="true" aria-labelledby="chatTitle">
   <header><div class="cubit-sm" data-cubit="hello"></div><div class="t"><strong id="chatTitle">SandBox team</strong><span>Questions about your application or path? Ask here.</span></div><button class="x" type="button" id="chatClose" aria-label="Close messages">×</button></header>
   <div class="msgs" id="msgs" aria-live="polite"></div>
-  <form class="composer" id="composer"><textarea id="msgIn" rows="1" maxlength="2000" placeholder="Write a message…" aria-label="Message"></textarea><button class="btn btn-accent btn-sm" type="submit" style="height:44px">Send</button></form>
+  <div class="emoji-pop" id="emojiPop" hidden role="group" aria-label="Emoji"></div>
+  <form class="composer" id="composer"><button type="button" class="emoji-btn" id="emojiBtn" aria-label="Add an emoji" aria-expanded="false" aria-controls="emojiPop">😊</button><textarea id="msgIn" rows="1" maxlength="2000" placeholder="Write a message…" aria-label="Message"></textarea><button class="btn btn-accent btn-sm" type="submit" style="height:44px">Send</button></form>
 </aside>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="/cubit/cubit.js"></script>
+<script src="/portal/cubit-buddy.js"></script>
 <script>
 (function(){
 const ROLE_NAMES={pm:"Project Manager",uiux:"UI/UX Designer",fe:"Frontend Developer",be:"Backend Developer",qa:"QA Tester",devops:"DevOps Engineer"};
@@ -210,7 +251,7 @@ function setAccent(path){
 }
 
 // ---------- auth ----------
-function showAuth(){setAccent(null);$("#dashView").hidden=true;$("#who").hidden=true;$("#authView").hidden=false;drawCubits($("#authView"));}
+function showAuth(){if(window.CubitBuddy)CubitBuddy.hide();setAccent(null);$("#dashView").hidden=true;$("#who").hidden=true;$("#authView").hidden=false;drawCubits($("#authView"));}
 function tab(which){
   const setup=which==="setup";
   $("#tabIn").setAttribute("aria-selected",!setup);$("#tabSetup").setAttribute("aria-selected",setup);
@@ -285,6 +326,7 @@ function render(){
       <div class="panel"><h2>Your application</h2>${appSummary(a)}</div></div>`;
   }
   v.hidden=false;drawCubits(v);
+  if(window.CubitBuddy)CubitBuddy.setContext({first:a?a.firstName:"",application:a,path:p,progress:state.progress});
 }
 
 function pathView(a,p){
@@ -339,13 +381,25 @@ function bindModules(){
         if(done)state.progress.push(id);else state.progress=state.progress.filter(x=>x!==id);
         const p=state.path;const pct=Math.round(p.modules.filter(m=>state.progress.includes(m.id)).length/p.modules.length*100);
         $("#bar").style.width=pct+"%";$("#pctNum").textContent=pct+"%";$("#pctChip").textContent=pct+"% of modules done";
-        if(pct===100)toast("Every module done. Amazing work!");
+        if(window.CubitBuddy)CubitBuddy.setProgress(state.progress);
       }catch(err){li.classList.toggle("is-done",!done);btn.setAttribute("aria-pressed",!done);toast(err.message);}
     });
   });
 }
 
+// ---------- actions Cubit can take ----------
+function showModule(id){
+  const li=document.querySelector(`.module[data-id="${CSS.escape(id)}"]`);if(!li)return null;
+  li.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});
+  li.classList.remove("flash");void li.offsetWidth;li.classList.add("flash");
+  const t=li.querySelector(".tick");if(t)t.focus({preventScroll:true});return li;
+}
+function playModule(id){const li=showModule(id);const w=li&&li.querySelector(".watch");if(w&&w.getAttribute("aria-expanded")!=="true")w.click();}
+window.Portal={openChat:()=>openChat(),showModule,playModule};
+
 // ---------- messages ----------
+const PROMPTS=[["📅","When is our next team meeting?"],["🙋","I'm stuck on a module. Can someone help?"],["📦","How do I submit my deliverable?"],["👥","Who is on my team?"]];
+const EMOJI=["👋","😀","😂","😊","🥳","😅","🤔","😮","😢","🙏","👍","👏","🙌","💪","🔥","✨","🎉","❤️","💯","✅","❓","📚","💻","🚀"];
 const chat={msgs:[],lastId:0,open:false,timer:null,sending:false,lastFocus:null};
 const hm=iso=>new Date(iso).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
 function setBadge(n){const b=$("#msgBadge");b.hidden=!n;b.textContent=n>99?"99+":n;$("#msgBtn").setAttribute("aria-label",n?`Messages, ${n} unread`:"Messages");}
@@ -361,7 +415,9 @@ function msgsHtml(list,prev){
 }
 function renderMsgs(fresh){
   const box=$("#msgs");const near=box.scrollHeight-box.scrollTop-box.clientHeight<120;
-  if(!chat.msgs.length){box.innerHTML=`<div class="chat-empty"><div style="width:110px" data-cubit="hello"></div><strong>Say hi to the team</strong><span>Ask about your application, your path or a module. The SandBox team replies here.</span></div>`;drawCubits(box);return;}
+  if(!chat.msgs.length){box.innerHTML=`<div class="chat-empty"><div style="width:110px" data-cubit="hello"></div><strong>Say hi to the team</strong><span>Ask about your application, your path or a module. The SandBox team replies here.</span>
+    <div class="prompts"><span class="prompts-lbl">Cubit's ideas</span>${PROMPTS.map((q,i)=>`<button type="button" class="prompt" data-q="${i}">${q[0]} ${esc(q[1])}</button>`).join("")}</div></div>`;drawCubits(box);
+    box.querySelectorAll(".prompt").forEach(b=>b.onclick=()=>{ta.value=PROMPTS[b.dataset.q][1];ta.dispatchEvent(new Event("input"));ta.focus();});return;}
   if(fresh&&box.querySelector(".msg")){const prev=chat.msgs[chat.msgs.indexOf(fresh[0])-1];box.insertAdjacentHTML("beforeend",msgsHtml(fresh,prev));}
   else box.innerHTML=msgsHtml(chat.msgs);
   if(near||!fresh)box.scrollTop=box.scrollHeight;
@@ -374,9 +430,17 @@ function markSeen(){
 async function pollMsgs(first){
   try{
     const r=await api(`/api/student/messages?after=${first?0:chat.lastId}${chat.open?"&read=1":""}`);
-    if(first)chat.msgs=r.messages;else chat.msgs.push(...r.messages.filter(m=>!chat.msgs.some(x=>x.id===m.id)));
+    const fresh=first?[]:r.messages.filter(m=>!chat.msgs.some(x=>x.id===m.id));
+    if(first)chat.msgs=r.messages;else chat.msgs.push(...fresh);
     if(chat.msgs.length)chat.lastId=chat.msgs[chat.msgs.length-1].id;
     setBadge(chat.open?0:r.unread);
+    const unread=chat.open?0:r.unread;
+    document.title=(unread?`(${unread}) `:"")+"SandBox Student Portal";
+    if(window.CubitBuddy){
+      CubitBuddy.setUnread(unread,[...chat.msgs].reverse().find(m=>m.from==="admin"));
+      const news=fresh.filter(m=>m.from==="admin");
+      if(news.length&&!chat.open)CubitBuddy.newMessage(news[news.length-1]);
+    }
     chat.seenUpTo=r.seenUpTo||0;
     if(chat.open){if(first)renderMsgs();else if(r.messages.length)renderMsgs(r.messages);markSeen();}
   }catch(err){if(err.status===401){stopChat();showAuth();}}
@@ -386,17 +450,28 @@ function stopChat(){clearInterval(chat.timer);chat.timer=null;closeChat(true);}
 function openChat(){
   chat.lastFocus=document.activeElement;chat.open=true;
   $("#chatbox").hidden=false;$("#scrim").hidden=false;document.body.style.overflow="hidden";drawCubits($("#chatbox"));
-  renderMsgs();startChat();
+  renderMsgs();startChat();if(window.CubitBuddy)CubitBuddy.chatOpen(true);
   if(matchMedia("(min-width:700px)").matches)$("#msgIn").focus();else $("#chatClose").focus();
 }
 function closeChat(silent){
-  if(!chat.open)return;chat.open=false;$("#chatbox").hidden=true;$("#scrim").hidden=true;document.body.style.overflow="";
+  if(!chat.open)return;chat.open=false;$("#chatbox").hidden=true;$("#scrim").hidden=true;document.body.style.overflow="";closeEmoji();
+  if(window.CubitBuddy)CubitBuddy.chatOpen(false);
   if(!silent){startChat();if(chat.lastFocus&&document.contains(chat.lastFocus))chat.lastFocus.focus();}
 }
 $("#msgBtn").onclick=openChat;$("#chatClose").onclick=()=>closeChat();$("#scrim").onclick=()=>closeChat();
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&chat.open)closeChat();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&chat.open){if(!pop.hidden)closeEmoji();else closeChat();}});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&chat.timer)pollMsgs(false);});
 const ta=$("#msgIn");
+const pop=$("#emojiPop");
+pop.innerHTML=EMOJI.map(e=>`<button type="button" data-e="${e}" aria-label="${e}">${e}</button>`).join("");
+function closeEmoji(){pop.hidden=true;$("#emojiBtn").setAttribute("aria-expanded","false");}
+$("#emojiBtn").onclick=()=>{pop.hidden=!pop.hidden;$("#emojiBtn").setAttribute("aria-expanded",String(!pop.hidden));if(!pop.hidden)pop.querySelector("button").focus();};
+pop.addEventListener("click",e=>{const b=e.target.closest("[data-e]");if(!b)return;
+  const st=ta.selectionStart??ta.value.length,en=ta.selectionEnd??ta.value.length;
+  ta.value=ta.value.slice(0,st)+b.dataset.e+ta.value.slice(en);const c=st+b.dataset.e.length;
+  closeEmoji();ta.focus();ta.setSelectionRange(c,c);ta.dispatchEvent(new Event("input"));});
+pop.addEventListener("keydown",e=>{if(e.key==="Escape"){e.stopPropagation();closeEmoji();$("#emojiBtn").focus();}});
+document.addEventListener("click",e=>{if(!pop.hidden&&!pop.contains(e.target)&&e.target!==$("#emojiBtn"))closeEmoji();});
 ta.addEventListener("input",()=>{ta.style.height="auto";ta.style.height=Math.min(150,ta.scrollHeight)+"px";});
 ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("#composer").requestSubmit();}});
 $("#composer").addEventListener("submit",async e=>{

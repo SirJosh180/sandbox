@@ -84,3 +84,12 @@ Cubit lives in `public/cubit/`. `cubit.js` draws Cubit as an inline SVG in four 
 
 - Students open **Messages** in the portal to chat with the SandBox team. Admins answer under **Messages** in the admin portal, or from an applicant's **Message** button.
 - The Messages tab shows how many student messages are unread. Both sides check for new messages every few seconds while the chat is open.
+
+## Cubit in the student portal
+
+`public/portal/cubit-buddy.js` puts Cubit in the bottom corner of the portal as the student's helper:
+
+- A red badge counts unread team messages plus the student's next task. Emoji above Cubit's head cycle through what's waiting (💬 messages, 📚 next module, 🎬 video, ⏳ in review, 🎉 all done).
+- Clicking Cubit opens a list of notifications with quick actions: **Read**, **Show me** (scrolls to the next module), **Watch**, **Ask the team**.
+- Cubit pops up with a burst of emoji when the team sends a new message, when every module is done, and once per browser session as a greeting. Its mood changes with the student's situation.
+- The chat has an emoji picker and Cubit's suggested questions for students who haven't written yet. The tab title shows the unread count.
